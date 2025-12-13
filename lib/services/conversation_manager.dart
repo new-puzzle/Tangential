@@ -115,6 +115,25 @@ class ConversationManager {
     };
 
     _setupRealtimeCallbacks();
+    _setupBackgroundCallbacks();
+  }
+
+  void _setupBackgroundCallbacks() {
+    // Handle screen off - keep audio streaming alive
+    BackgroundService.onScreenOff = () {
+      debugPrint('POCKET MODE: Screen OFF - maintaining audio stream');
+      // Audio should continue due to wake lock, but log for debugging
+    };
+    
+    // Handle screen on - restart audio if needed
+    BackgroundService.onScreenOn = () {
+      debugPrint('POCKET MODE: Screen ON');
+      // Restart mic streaming if it died during screen off
+      if (_isRunning && _isRealtimeMode() && !_isSpeaking) {
+        debugPrint('POCKET MODE: Restarting mic streaming after screen on');
+        _startAudioStreaming();
+      }
+    };
   }
 
   void _setupRealtimeCallbacks() {
