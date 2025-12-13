@@ -41,7 +41,7 @@ class GeminiLiveService {
 
     try {
       final uri = Uri.parse(
-        'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent'
+        'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent'
         '?key=$_apiKey',
       );
 
@@ -79,7 +79,7 @@ class GeminiLiveService {
   Future<void> _sendSetupMessage() async {
     final setupMessage = {
       'setup': {
-        'model': 'models/gemini-2.0-flash-live-preview', // Use a valid, current model
+        'model': 'models/gemini-2.5-flash-native-audio-preview-09-2025',
         'generationConfig': {
           'responseModalities': ['AUDIO', 'TEXT'],
           'speechConfig': {

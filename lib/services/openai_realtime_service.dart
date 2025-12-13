@@ -38,7 +38,7 @@ class OpenAiRealtimeService {
 
     try {
       final uri = Uri.parse(
-        'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview', // Use correct realtime model
+        'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17',
       );
 
       _channel = WebSocketChannel.connect(
