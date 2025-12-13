@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'services/audio_handler.dart';
+import 'services/background_service.dart';
 import 'providers/app_state.dart';
 import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
@@ -16,6 +17,9 @@ void main() async {
 
   // Initialize the background audio service
   await TangentialAudioHandler.init();
+  
+  // Setup background service for screen on/off detection
+  BackgroundService.setupMethodCallHandler();
 
   runApp(const TangentialApp());
 }

@@ -17,21 +17,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _mistralController = TextEditingController();
 
   bool _showApiKeys = false;
-  bool _keysLoaded = false;
 
   @override
   void initState() {
     super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Load API keys after the widget tree is built (only once)
-    if (!_keysLoaded) {
-      _loadApiKeys();
-      _keysLoaded = true;
-    }
+    _loadApiKeys();
   }
 
   void _loadApiKeys() {
@@ -40,32 +30,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _openaiController.text = appState.openaiApiKey ?? '';
     _deepseekController.text = appState.deepseekApiKey ?? '';
     _mistralController.text = appState.mistralApiKey ?? '';
-    // Trigger rebuild to show checkmarks
-    if (mounted) setState(() {});
   }
 
-  Future<void> _saveApiKeys() async {
+  void _saveApiKeys() {
     final appState = context.read<AppState>();
-    
-    // Save all keys (these are async operations)
-    await Future.wait([
-      appState.setGeminiApiKey(_geminiController.text.trim()),
-      appState.setOpenaiApiKey(_openaiController.text.trim()),
-      appState.setDeepseekApiKey(_deepseekController.text.trim()),
-      appState.setMistralApiKey(_mistralController.text.trim()),
-    ]);
+    appState.setGeminiApiKey(_geminiController.text.trim());
+    appState.setOpenaiApiKey(_openaiController.text.trim());
+    appState.setDeepseekApiKey(_deepseekController.text.trim());
+    appState.setMistralApiKey(_mistralController.text.trim());
 
-    // Force UI update to show checkmarks
-    if (mounted) setState(() {});
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('API keys saved securely'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('API keys saved securely'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   @override

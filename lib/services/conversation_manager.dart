@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'audio_handler.dart';
-import 'pcm_audio_player.dart';
+import 'background_service.dart';
 import 'recording_service.dart';
 import 'tts_service.dart';
 import 'whisper_service.dart';
@@ -14,6 +13,7 @@ import 'openai_realtime_service.dart';
 import 'openai_service.dart';
 import 'deepseek_service.dart';
 import 'mistral_service.dart';
+import 'pcm_audio_player.dart';
 import '../providers/app_state.dart';
 
 /// Orchestrates the entire conversation flow.
@@ -26,7 +26,6 @@ class ConversationManager {
   late RecordingService _recordingService;
   late TtsService _ttsService;
   late WhisperService _whisperService;
-  late PcmAudioPlayer _pcmAudioPlayer;
 
   // AI Services
   late GeminiFlashService _geminiFlashService;
@@ -35,6 +34,9 @@ class ConversationManager {
   late OpenAiService _openaiService;
   late DeepseekService _deepseekService;
   late MistralService _mistralService;
+  
+  // PCM Audio Player for realtime modes
+  late PcmAudioPlayer _pcmPlayer;
 
   // State
   bool _isRunning = false;
@@ -45,19 +47,8 @@ class ConversationManager {
   Timer? _vadTimer;
   bool _hasDetectedSpeech = false;
   int _silenceCount = 0;
-  int _speechDuration = 0; // How long user has been speaking (in VAD ticks)
-  int _totalRecordingTicks = 0; // Total recording time
-  bool _vadCheckInProgress = false;
-  int _vadErrorCount = 0;
-  double _peakAmplitude = 0.0;
-  double _recentAvgAmplitude = 0.0; // Rolling average for noise floor
-  
-  // VAD tuning - optimized for walking/noisy environments
-  static const int _silenceThreshold = 3; // ~0.6 seconds of silence after speech
-  static const double _speechStartThreshold = 0.08; // Very low - detect any speech
-  static const int _maxVadErrors = 3;
-  static const int _maxRecordingTicks = 75; // ~15 seconds max recording
-  static const int _minSpeechTicks = 5; // Need at least 1 second of speech
+  static const int _silenceThreshold = 8; // ~1.6 seconds of silence
+  static const double _speechThreshold = 0.075;
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -73,7 +64,6 @@ class ConversationManager {
     _recordingService = RecordingService();
     _ttsService = TtsService();
     _whisperService = WhisperService();
-    _pcmAudioPlayer = PcmAudioPlayer();
 
     _geminiFlashService = GeminiFlashService();
     _geminiLiveService = GeminiLiveService();
@@ -81,6 +71,22 @@ class ConversationManager {
     _openaiService = OpenAiService();
     _deepseekService = DeepseekService();
     _mistralService = MistralService();
+    
+    // Initialize PCM player for smooth audio playback
+    _pcmPlayer = PcmAudioPlayer();
+    _pcmPlayer.setSampleRate(24000); // Both Gemini and OpenAI use 24kHz
+    
+    _pcmPlayer.onPlaybackStarted = () {
+      debugPrint('PCM: Playback started');
+      _updateState(ConversationState.speaking);
+    };
+    
+    _pcmPlayer.onPlaybackComplete = () {
+      debugPrint('PCM: Playback complete');
+      if (_isRunning && _isRealtimeMode()) {
+        _updateState(ConversationState.listening);
+      }
+    };
 
     _ttsService.onStart = () {
       _isSpeaking = true;
@@ -94,108 +100,36 @@ class ConversationManager {
       }
     };
 
-    // PCM audio player callbacks for realtime modes
-    _pcmAudioPlayer.onPlaybackStarted = () {
-      debugPrint('PCM: Playback started - AI is speaking');
-      _isSpeaking = true;
-      _updateState(ConversationState.speaking);
-    };
-
-    _pcmAudioPlayer.onPlaybackComplete = () {
-      debugPrint('PCM: Playback complete - ready for next input');
-      _isSpeaking = false;
-      if (_isRunning && _isRealtimeMode()) {
-        _updateState(ConversationState.listening);
-        debugPrint('STATE: Now listening for user speech');
-        // CRITICAL: Restart mic streaming - it dies during playback due to audio focus loss
-        debugPrint('RESTART: Re-starting mic streaming after playback');
-        _startAudioStreaming();
-      }
-    };
-
     _setupRealtimeCallbacks();
   }
 
   void _setupRealtimeCallbacks() {
     // Gemini Live - native bidirectional audio
     _geminiLiveService.onTranscript = (text) => onUserTranscript?.call(text);
-    _geminiLiveService.onResponse = (text) {
-      onAiResponse?.call(text);
-      _updateState(ConversationState.speaking);
-    };
-    _geminiLiveService.onAudio = (audioData) {
-      _handleReceivedAudio(audioData);
-    };
-    _geminiLiveService.onError = (error) {
-      debugPrint('Gemini Live error callback: $error');
-      onError?.call(error);
-    };
+    _geminiLiveService.onResponse = (text) => onAiResponse?.call(text);
+    _geminiLiveService.onError = (error) => onError?.call(error);
     _geminiLiveService.onInterrupted = () {
       debugPrint('Gemini Live: User interrupted');
-      _pcmAudioPlayer.stop();
-      _updateState(ConversationState.listening);
+      _pcmPlayer.stop(); // Stop playback on interruption
     };
-    _geminiLiveService.onTurnComplete = () {
-      debugPrint('Gemini Live: Turn complete - audio done');
-      _handleAudioComplete();
-    };
-    _geminiLiveService.onDisconnected = () {
-      debugPrint('Gemini Live: Disconnected callback fired');
-      _pcmAudioPlayer.stop();
-      if (_isRunning) {
-        onError?.call('Gemini Live disconnected unexpectedly');
-        stopConversation();
-      }
+    // Wire up audio playback for Gemini Live
+    _geminiLiveService.onAudio = (audioData) {
+      _pcmPlayer.addAudioChunk(audioData);
     };
 
     // OpenAI Realtime - native bidirectional audio
     _openaiRealtimeService.onTranscript = (text) =>
         onUserTranscript?.call(text);
-    _openaiRealtimeService.onResponse = (text) {
-      onAiResponse?.call(text);
-      _updateState(ConversationState.speaking);
-    };
-    _openaiRealtimeService.onAudio = (audioData) {
-      _handleReceivedAudio(audioData);
-    };
-    _openaiRealtimeService.onError = (error) {
-      debugPrint('OpenAI Realtime error callback: $error');
-      onError?.call(error);
-    };
+    _openaiRealtimeService.onResponse = (text) => onAiResponse?.call(text);
+    _openaiRealtimeService.onError = (error) => onError?.call(error);
     _openaiRealtimeService.onAiDone = () {
-      debugPrint('OpenAI Realtime: AI done - audio complete');
-      _handleAudioComplete();
+      _pcmPlayer.audioComplete(); // Signal that audio is done
+      _updateState(ConversationState.listening);
     };
-    _openaiRealtimeService.onDisconnected = () {
-      debugPrint('OpenAI Realtime: Disconnected callback fired');
-      _pcmAudioPlayer.stop();
-      if (_isRunning) {
-        onError?.call('OpenAI Realtime disconnected unexpectedly');
-        stopConversation();
-      }
+    // Wire up audio playback for OpenAI Realtime
+    _openaiRealtimeService.onAudio = (audioData) {
+      _pcmPlayer.addAudioChunk(audioData);
     };
-  }
-
-  /// Handle received audio from realtime services - plays via PCM audio player
-  void _handleReceivedAudio(Uint8List audioData) {
-    // Set sample rate based on provider (Gemini = 24kHz, OpenAI = 24kHz)
-    final sampleRate = _getRealtimeSampleRate();
-    _pcmAudioPlayer.setSampleRate(sampleRate);
-    
-    // Add to player for real-time playback
-    _pcmAudioPlayer.addAudioChunk(audioData);
-    
-    debugPrint(
-      'Playing audio chunk: ${audioData.length} bytes (buffered: ${_pcmAudioPlayer.bufferedBytes})',
-    );
-
-    // Update state to show we're receiving/playing audio
-    _updateState(ConversationState.speaking);
-  }
-  
-  /// Signal that AI has finished sending audio
-  void _handleAudioComplete() {
-    _pcmAudioPlayer.audioComplete();
   }
 
   void configureApiKeys() {
@@ -224,44 +158,19 @@ class ConversationManager {
             appState.currentMode == AiMode.live);
   }
 
-  /// Get the sample rate for realtime audio playback
-  int _getRealtimeSampleRate() {
-    // Gemini Live outputs 24kHz audio, OpenAI Realtime outputs 24kHz
-    // Both use 24000 Hz for output audio
-    return 24000;
-  }
-
   /// Start a conversation
   Future<bool> startConversation() async {
     if (_isRunning) return true;
 
-    // Ensure API keys are loaded from secure storage
-    await appState.loadApiKeys();
     configureApiKeys();
 
-    debugPrint(
-      'API Keys: Gemini=${appState.geminiApiKey != null}, OpenAI=${appState.openaiApiKey != null}, '
-      'Deepseek=${appState.deepseekApiKey != null}, Mistral=${appState.mistralApiKey != null}',
-    );
-
     if (appState.currentApiKey == null || appState.currentApiKey!.isEmpty) {
-      onError?.call(
-        'Please set the ${_getProviderName()} API key in Settings.',
-      );
+      onError?.call('Please set the API key in Settings first.');
       return false;
     }
 
-    // For standard modes, we need OpenAI key for Whisper transcription
-    if (!_isRealtimeMode()) {
-      if (appState.openaiApiKey == null || appState.openaiApiKey!.isEmpty) {
-        onError?.call(
-          'Standard modes require OpenAI API key for speech recognition. Please set it in Settings.',
-        );
-        return false;
-      }
-    }
-
     await WakelockPlus.enable();
+    await BackgroundService.start(); // Acquire native wake lock for screen-off operation
     await audioHandler.startConversation(_getAiName());
 
     _isRunning = true;
@@ -289,47 +198,24 @@ class ConversationManager {
   Future<bool> _startRealtimeSession() async {
     _updateState(ConversationState.listening);
 
-    // Request mic permission first
-    if (!await _recordingService.requestPermission()) {
-      onError?.call('Microphone permission is required.');
-      return false;
-    }
-
     bool connected = false;
-    String errorDetail = '';
 
     if (appState.selectedProvider == AiProvider.gemini) {
-      debugPrint('Attempting Gemini Live connection...');
       connected = await _geminiLiveService.connect();
       if (connected) {
         debugPrint('Connected to Gemini Live API - bidirectional audio active');
-        // Start streaming audio to Gemini Live
-        await _startAudioStreaming();
-      } else {
-        errorDetail =
-            'Gemini Live connection failed. Check your API key and try again.';
       }
     } else if (appState.selectedProvider == AiProvider.openai) {
-      debugPrint('Attempting OpenAI Realtime connection...');
       connected = await _openaiRealtimeService.connect();
       if (connected) {
         debugPrint(
           'Connected to OpenAI Realtime API - bidirectional audio active',
         );
-        // Start streaming audio to OpenAI Realtime
-        await _startAudioStreaming();
-      } else {
-        errorDetail =
-            'OpenAI Realtime connection failed. Check your API key and try again.';
       }
     }
 
     if (!connected) {
-      onError?.call(
-        errorDetail.isNotEmpty
-            ? errorDetail
-            : 'Failed to connect to realtime API.',
-      );
+      onError?.call('Failed to connect to realtime API. Check your API key.');
       await stopConversation();
       return false;
     }
@@ -337,56 +223,13 @@ class ConversationManager {
     return true;
   }
 
-  /// Start streaming microphone audio to realtime service
-  Future<void> _startAudioStreaming() async {
-    debugPrint('STREAM: _startAudioStreaming called');
-    final isGemini = appState.selectedProvider == AiProvider.gemini;
-    // Gemini Live: 16kHz, OpenAI Realtime: 24kHz
-    final sampleRate = isGemini ? 16000 : 24000;
-    debugPrint('STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate');
-
-    final success = await _recordingService.startStreaming(
-      sampleRate: sampleRate,
-      onData: (audioData) {
-        // Send audio to the appropriate realtime service
-        if (isGemini) {
-          _geminiLiveService.sendAudio(audioData);
-        } else {
-          _openaiRealtimeService.sendAudio(audioData);
-        }
-      },
-    );
-
-    if (!success) {
-      debugPrint('STREAM ERROR: Failed to start audio streaming');
-      onError?.call('Failed to start microphone streaming');
-    } else {
-      debugPrint(
-        'Audio streaming started (${sampleRate}Hz) - sending to ${isGemini ? "Gemini Live" : "OpenAI Realtime"}',
-      );
-    }
-  }
-
-  /// Stop audio streaming for realtime mode
-  Future<void> _stopAudioStreaming() async {
-    await _recordingService.stopStreaming();
-  }
-
   /// Start listening with VAD (for standard modes only)
   void _startListening() {
     if (!_isRunning || _isProcessing || _isRealtimeMode()) return;
 
     _updateState(ConversationState.listening);
-    
-    // Reset all VAD state
     _hasDetectedSpeech = false;
     _silenceCount = 0;
-    _speechDuration = 0;
-    _totalRecordingTicks = 0;
-    _vadCheckInProgress = false;
-    _vadErrorCount = 0;
-    _peakAmplitude = 0.0;
-    _recentAvgAmplitude = 0.0;
 
     _recordingService.startRecording().then((path) {
       if (path == null) {
@@ -394,104 +237,37 @@ class ConversationManager {
         return;
       }
 
-      debugPrint('Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)');
+      debugPrint('Recording started, monitoring for speech...');
 
       _vadTimer?.cancel();
       _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
-        if (_vadCheckInProgress) return;
         _checkVoiceActivity();
       });
     });
   }
 
-  /// Check voice activity based on amplitude (optimized for noisy environments)
+  /// Check voice activity based on amplitude
   Future<void> _checkVoiceActivity() async {
-    _vadCheckInProgress = true;
+    debugPrint('VAD Check: Entered function.');
+    if (!_isRunning || _isProcessing) {
+      _vadTimer?.cancel();
+      return;
+    }
 
-    try {
-      if (!_isRunning || _isProcessing) {
-        _vadTimer?.cancel();
-        return;
-      }
+    final amplitude = await _recordingService.getAmplitude();
+    // debugPrint('VAD Check: Amplitude=${amplitude.toStringAsFixed(3)}');
 
-      _totalRecordingTicks++;
-      
-      // SAFETY: Max recording time reached - process whatever we have
-      if (_totalRecordingTicks >= _maxRecordingTicks) {
-        debugPrint('VAD: Max recording time reached, processing...');
+    if (amplitude > _speechThreshold) {
+      _hasDetectedSpeech = true;
+      _silenceCount = 0;
+    } else if (_hasDetectedSpeech) {
+      _silenceCount++;
+
+      if (_silenceCount >= _silenceThreshold) {
+        debugPrint('Speech ended, processing...');
         _vadTimer?.cancel();
         await _processRecording();
-        return;
       }
-
-      final amplitude = await _recordingService.getAmplitude();
-
-      // Check for error signal (-1.0)
-      if (amplitude < 0) {
-        _vadErrorCount++;
-        if (_vadErrorCount >= _maxVadErrors) {
-          debugPrint('VAD: Too many errors, processing anyway...');
-          _vadTimer?.cancel();
-          if (_hasDetectedSpeech) {
-            await _processRecording();
-          } else {
-            _isProcessing = false;
-            if (_isRunning) _startListening();
-          }
-        }
-        return;
-      }
-      _vadErrorCount = 0;
-
-      // Update rolling average (noise floor estimation)
-      _recentAvgAmplitude = (_recentAvgAmplitude * 0.8) + (amplitude * 0.2);
-      
-      // Track peak amplitude during speech
-      if (_hasDetectedSpeech && amplitude > _peakAmplitude) {
-        _peakAmplitude = amplitude;
-      }
-
-      // Dynamic threshold: speech is anything significantly above noise floor
-      final speechThreshold = (_recentAvgAmplitude * 1.5).clamp(_speechStartThreshold, 0.5);
-      
-      // Silence threshold: dropped to near noise floor level
-      final silenceThreshold = _hasDetectedSpeech 
-          ? (_peakAmplitude * 0.3).clamp(_recentAvgAmplitude * 1.1, _peakAmplitude * 0.5)
-          : _speechStartThreshold;
-
-      if (amplitude > speechThreshold) {
-        // Speech detected
-        if (!_hasDetectedSpeech) {
-          debugPrint('VAD: Speech started! (amp=${amplitude.toStringAsFixed(3)}, threshold=${speechThreshold.toStringAsFixed(3)})');
-          _peakAmplitude = amplitude;
-        }
-        _hasDetectedSpeech = true;
-        _speechDuration++;
-        _silenceCount = 0;
-      } else if (_hasDetectedSpeech) {
-        // Was speaking, now quieter - is it silence?
-        if (amplitude < silenceThreshold) {
-          _silenceCount++;
-          
-          // Only process if we have enough speech AND enough silence
-          if (_speechDuration >= _minSpeechTicks && _silenceCount >= _silenceThreshold) {
-            debugPrint('VAD: Speech ended after ${_speechDuration * 200}ms, processing...');
-            _vadTimer?.cancel();
-            await _processRecording();
-            return;
-          }
-        } else {
-          // Amplitude between speech and silence thresholds - keep listening
-          if (_silenceCount > 0) _silenceCount--;
-        }
-      }
-      
-      // Debug every 5 ticks (1 second)
-      if (_totalRecordingTicks % 5 == 0) {
-        debugPrint('VAD: tick=$_totalRecordingTicks amp=${amplitude.toStringAsFixed(3)} noise=${_recentAvgAmplitude.toStringAsFixed(3)} speech=$_hasDetectedSpeech dur=$_speechDuration silence=$_silenceCount');
-      }
-    } finally {
-      _vadCheckInProgress = false;
     }
   }
 
@@ -517,19 +293,14 @@ class ConversationManager {
         return;
       }
 
-      debugPrint('Sending audio to Whisper for transcription...');
       final transcript = await _whisperService.transcribe(audioPath);
       if (transcript == null || transcript.trim().isEmpty) {
-        debugPrint(
-          'Transcription returned empty - no speech detected or API error',
-        );
-        // Don't show error for empty speech, just restart listening
         _isProcessing = false;
         if (_isRunning) _startListening();
         return;
       }
 
-      debugPrint('Transcribed: "$transcript"');
+      debugPrint('Transcribed: $transcript');
       onUserTranscript?.call(transcript);
 
       final lower = transcript.toLowerCase();
@@ -609,11 +380,9 @@ class ConversationManager {
 
     _vadTimer?.cancel();
 
-    // Stop both streaming and recording
-    await _stopAudioStreaming();
     await _recordingService.stopRecording();
     await _ttsService.stop();
-    await _pcmAudioPlayer.stop();
+    await _pcmPlayer.stop(); // Stop any playing audio
 
     // Only disconnect the service that was actually used
     if (_geminiLiveService.isConnected) {
@@ -624,6 +393,7 @@ class ConversationManager {
     }
 
     await audioHandler.stopConversation();
+    await BackgroundService.stop(); // Release native wake lock
     await WakelockPlus.disable();
 
     appState.setConversationActive(false);
@@ -712,19 +482,6 @@ class ConversationManager {
     }
   }
 
-  String _getProviderName() {
-    switch (appState.selectedProvider) {
-      case AiProvider.gemini:
-        return 'Gemini';
-      case AiProvider.openai:
-        return 'OpenAI';
-      case AiProvider.deepseek:
-        return 'Deepseek';
-      case AiProvider.mistral:
-        return 'Mistral';
-    }
-  }
-
   void _updateState(ConversationState state) {
     appState.updateConversationState(state);
     audioHandler.updateConversationState(state);
@@ -735,7 +492,7 @@ class ConversationManager {
     await stopConversation();
     await _recordingService.dispose();
     await _ttsService.dispose();
-    _pcmAudioPlayer.dispose();
+    await _pcmPlayer.dispose();
     _geminiLiveService.dispose();
     _openaiRealtimeService.dispose();
   }

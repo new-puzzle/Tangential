@@ -29,56 +29,33 @@ class TranscriptionDisplay extends StatelessWidget {
           entries.length +
           (conversationState != ConversationState.idle ? 1 : 0),
       itemBuilder: (context, index) {
+        // Show status indicator at the end
         if (index == entries.length) {
           return _buildStatusIndicator(context);
         }
+
         return _buildTranscriptBubble(context, entries[index]);
       },
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    // Show active status if conversation is running
-    if (conversationState != ConversationState.idle) {
-      return Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _PulsingStatusCircle(state: conversationState),
-              const SizedBox(height: 24),
-              Text(
-                'Speak now...',
-                style: TextStyle(color: Colors.white54, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Center(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.white24),
-            const SizedBox(height: 16),
-            Text(
-              'Select an AI and start a conversation',
-              style: TextStyle(color: Colors.white54, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Works with screen off in your pocket',
-              style: TextStyle(color: Colors.white38, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.white24),
+          const SizedBox(height: 16),
+          Text(
+            'Select an AI and start a conversation',
+            style: TextStyle(color: Colors.white54, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Works with screen off in your pocket',
+            style: TextStyle(color: Colors.white38, fontSize: 14),
+          ),
+        ],
       ),
     );
   }
@@ -216,6 +193,8 @@ class TranscriptionDisplay extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          _buildPulsingDot(color),
+          const SizedBox(width: 8),
           Icon(icon, color: color, size: 18),
           const SizedBox(width: 6),
           Text(
@@ -230,104 +209,24 @@ class TranscriptionDisplay extends StatelessWidget {
       ),
     );
   }
-}
 
-/// Large pulsing status indicator for empty conversation state
-class _PulsingStatusCircle extends StatefulWidget {
-  final ConversationState state;
-
-  const _PulsingStatusCircle({required this.state});
-
-  @override
-  State<_PulsingStatusCircle> createState() => _PulsingStatusCircleState();
-}
-
-class _PulsingStatusCircleState extends State<_PulsingStatusCircle>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..repeat(reverse: true);
-    _animation = Tween<double>(
-      begin: 0.9,
-      end: 1.1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    String text;
-    IconData icon;
-    Color color;
-
-    switch (widget.state) {
-      case ConversationState.listening:
-        text = 'LISTENING';
-        icon = Icons.hearing;
-        color = Colors.green;
-        break;
-      case ConversationState.processing:
-        text = 'PROCESSING';
-        icon = Icons.psychology;
-        color = Colors.amber;
-        break;
-      case ConversationState.speaking:
-        text = 'SPEAKING';
-        icon = Icons.volume_up;
-        color = Colors.blue;
-        break;
-      case ConversationState.sleeping:
-        text = 'SLEEPING';
-        icon = Icons.bedtime;
-        color = Colors.purple;
-        break;
-      case ConversationState.idle:
-        return const SizedBox.shrink();
-    }
-
-    return Column(
-      children: [
-        AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _animation.value,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(0.2),
-                  border: Border.all(color: color, width: 3),
-                ),
-                child: Icon(icon, color: color, size: 50),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
+  Widget _buildPulsingDot(Color color) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.5, end: 1.0),
+      duration: const Duration(milliseconds: 800),
+      builder: (context, value, child) {
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withOpacity(value),
           ),
-        ),
-      ],
+        );
+      },
+      onEnd: () {
+        // This creates a continuous pulse effect
+      },
     );
   }
 }

@@ -3,21 +3,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as ws_status;
 import 'system_prompt.dart';
 
 /// Gemini Live API service for real-time bidirectional voice conversation.
 /// Uses WebSocket for streaming audio input/output with interruption support.
 class GeminiLiveService {
   WebSocketChannel? _channel;
-  StreamSubscription? _streamSubscription;
   String? _apiKey;
   bool _isConnected = false;
   bool _isListening = false;
-  bool _setupComplete = false;
-  
-  // Buffer for accumulating response text
-  final StringBuffer _responseBuffer = StringBuffer();
+  bool _isDisconnecting = false;
 
   // Callbacks
   Function(String)? onTranscript;
@@ -27,9 +22,8 @@ class GeminiLiveService {
   VoidCallback? onDisconnected;
   Function(String)? onError;
   VoidCallback? onInterrupted;
-  VoidCallback? onTurnComplete;
 
-  bool get isConnected => _isConnected && _setupComplete;
+  bool get isConnected => _isConnected;
   bool get isListening => _isListening;
 
   void setApiKey(String apiKey) {
@@ -45,103 +39,49 @@ class GeminiLiveService {
 
     if (_isConnected) return true;
 
-    // Clean up any previous connection state
-    _cleanup();
-
     try {
-      // Gemini Live API WebSocket endpoint
       final uri = Uri.parse(
-        'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent'
+        'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent'
         '?key=$_apiKey',
       );
 
-      debugPrint('Gemini Live: Connecting to WebSocket...');
       _channel = WebSocketChannel.connect(uri);
-      
-      // Wait for connection with timeout
-      await _channel!.ready.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw TimeoutException('WebSocket connection timed out');
-        },
-      );
-      
+      await _channel!.ready;
       _isConnected = true;
-      _setupComplete = false;
-      debugPrint('Gemini Live: WebSocket connected, sending setup...');
+      _isDisconnecting = false;
 
-      // Set up stream listener BEFORE sending setup message
-      final completer = Completer<bool>();
-      
-      _streamSubscription = _channel!.stream.listen(
-        (message) {
-          _handleMessage(message, completer);
-        },
+      await _sendSetupMessage();
+
+      _channel!.stream.listen(
+        _handleMessage,
         onError: (error) {
           debugPrint('Gemini Live WebSocket error: $error');
-          if (!completer.isCompleted) {
-            completer.complete(false);
-          }
           onError?.call('Connection error: $error');
-          _cleanup();
-          onDisconnected?.call();
+          disconnect();
         },
         onDone: () {
-          // Try to get close code/reason
-          final closeCode = _channel?.closeCode;
-          final closeReason = _channel?.closeReason;
-          debugPrint('Gemini Live WebSocket closed by server - code: $closeCode, reason: $closeReason');
-          if (!completer.isCompleted) {
-            completer.complete(false);
-          }
-          final wasConnected = _isConnected;
-          _cleanup();
-          if (wasConnected) {
-            onDisconnected?.call();
-          }
-        },
-        cancelOnError: false,
-      );
-
-      // Send setup message
-      _sendSetupMessage();
-
-      // Wait for setup confirmation with timeout
-      final setupSuccess = await completer.future.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('Gemini Live: Setup confirmation timed out');
-          return false;
+          debugPrint('Gemini Live WebSocket closed');
+          disconnect();
         },
       );
 
-      if (!setupSuccess) {
-        debugPrint('Gemini Live: Setup failed');
-        _cleanup();
-        return false;
-      }
-
-      _setupComplete = true;
       onConnected?.call();
-      debugPrint('Gemini Live: Fully connected and ready');
+      debugPrint('Connected to Gemini Live API');
       return true;
     } catch (e) {
       debugPrint('Error connecting to Gemini Live: $e');
       onError?.call('Failed to connect: $e');
-      _cleanup();
+      _isConnected = false;
       return false;
     }
   }
 
-  void _sendSetupMessage() {
+  Future<void> _sendSetupMessage() async {
     final setupMessage = {
       'setup': {
-        'model': 'models/gemini-2.5-flash-native-audio-preview-09-2025',
+        'model': 'models/gemini-2.0-flash-live-preview', // Use a valid, current model
         'generationConfig': {
-          'responseModalities': ['AUDIO'],
-          'temperature': 0.7,
-          'topP': 0.95,
-          'maxOutputTokens': 8192,
+          'responseModalities': ['AUDIO', 'TEXT'],
           'speechConfig': {
             'voiceConfig': {
               'prebuiltVoiceConfig': {'voiceName': 'Kore'},
@@ -152,150 +92,64 @@ class GeminiLiveService {
           'parts': [
             {'text': tangentialSystemPrompt},
           ],
-          'role': 'user',
         },
-        'outputAudioTranscription': {},
       },
     };
 
-    final jsonStr = jsonEncode(setupMessage);
-    debugPrint('Gemini Live: Sending setup: $jsonStr');
-    _channel?.sink.add(jsonStr);
+    _channel?.sink.add(jsonEncode(setupMessage));
   }
 
-  void _cleanup() {
-    _streamSubscription?.cancel();
-    _streamSubscription = null;
+  void _handleMessage(dynamic message) {
     try {
-      _channel?.sink.close(ws_status.normalClosure);
-    } catch (e) {
-      // Ignore close errors
-    }
-    _channel = null;
-    _isConnected = false;
-    _isListening = false;
-    _setupComplete = false;
-  }
-
-  void _handleMessage(dynamic message, [Completer<bool>? setupCompleter]) {
-    try {
-      // Convert message to string - Gemini sends binary frames containing JSON
-      String? messageStr;
       if (message is String) {
-        messageStr = message;
-      } else if (message is List<int>) {
-        // Try to decode as UTF-8 JSON first
-        try {
-          messageStr = utf8.decode(message);
-        } catch (e) {
-          // Not UTF-8, treat as raw audio
-          debugPrint('Gemini Live: Raw audio bytes: ${message.length}');
-          onAudio?.call(Uint8List.fromList(message));
-          return;
-        }
-      }
-      
-      if (messageStr == null) {
-        debugPrint('Gemini Live: Unknown message type: ${message.runtimeType}');
-        return;
-      }
+        final data = jsonDecode(message) as Map<String, dynamic>;
 
-      // Try to parse as JSON
-      Map<String, dynamic> data;
-      try {
-        data = jsonDecode(messageStr) as Map<String, dynamic>;
-      } catch (e) {
-        debugPrint('Gemini Live: Non-JSON message: $messageStr');
-        return;
-      }
-      
-      debugPrint('Gemini Live received keys: ${data.keys.toList()}');
+        if (data.containsKey('serverContent')) {
+          final serverContent = data['serverContent'] as Map<String, dynamic>;
 
-      // Check for setup completion response
-      if (data.containsKey('setupComplete')) {
-        debugPrint('Gemini Live: Setup complete confirmed!');
-        if (setupCompleter != null && !setupCompleter.isCompleted) {
-          setupCompleter.complete(true);
-        }
-        _isListening = true;
-        return;
-      }
+          if (serverContent['interrupted'] == true) {
+            onInterrupted?.call();
+            return;
+          }
 
-      // Check for errors
-      if (data.containsKey('error')) {
-        final error = data['error'] as Map<String, dynamic>?;
-        final errorMsg = error?['message'] as String? ?? 'Unknown error';
-        debugPrint('Gemini Live error: $errorMsg');
-        onError?.call(errorMsg);
-        if (setupCompleter != null && !setupCompleter.isCompleted) {
-          setupCompleter.complete(false);
-        }
-        return;
-      }
+          if (serverContent.containsKey('modelTurn')) {
+            final modelTurn =
+                serverContent['modelTurn'] as Map<String, dynamic>;
+            final parts = modelTurn['parts'] as List<dynamic>?;
 
-      if (data.containsKey('serverContent')) {
-        // If we get serverContent, setup must be complete
-        if (setupCompleter != null && !setupCompleter.isCompleted) {
-          setupCompleter.complete(true);
-        }
-
-        final serverContent = data['serverContent'] as Map<String, dynamic>;
-
-        if (serverContent['interrupted'] == true) {
-          onInterrupted?.call();
-          return;
-        }
-
-        if (serverContent.containsKey('modelTurn')) {
-          final modelTurn =
-              serverContent['modelTurn'] as Map<String, dynamic>;
-          final parts = modelTurn['parts'] as List<dynamic>?;
-
-          if (parts != null) {
-            for (final part in parts) {
-              if (part is Map<String, dynamic>) {
-                // DON'T show text from modelTurn - that's internal thinking
-                // The actual spoken transcript comes from outputAudioTranscription
-                if (part.containsKey('inlineData')) {
-                  final inlineData =
-                      part['inlineData'] as Map<String, dynamic>;
-                  final audioData = inlineData['data'] as String?;
-                  if (audioData != null) {
-                    final audioBytes = base64Decode(audioData);
-                    onAudio?.call(audioBytes);
+            if (parts != null) {
+              for (final part in parts) {
+                if (part is Map<String, dynamic>) {
+                  if (part.containsKey('text')) {
+                    onResponse?.call(part['text'] as String);
+                  }
+                  if (part.containsKey('inlineData')) {
+                    final inlineData =
+                        part['inlineData'] as Map<String, dynamic>;
+                    final audioData = inlineData['data'] as String?;
+                    if (audioData != null) {
+                      final audioBytes = base64Decode(audioData);
+                      onAudio?.call(audioBytes);
+                    }
                   }
                 }
               }
             }
           }
-        }
-        
-        // Handle audio transcription (what the AI actually said)
-        // Accumulate text until turn is complete
-        if (serverContent.containsKey('outputTranscription')) {
-          final transcription = serverContent['outputTranscription'] as Map<String, dynamic>?;
-          final text = transcription?['text'] as String?;
-          if (text != null && text.isNotEmpty) {
-            _responseBuffer.write(text);
+
+          if (serverContent['turnComplete'] == true) {
+            _isListening = true;
           }
         }
 
-        if (serverContent['turnComplete'] == true) {
-          _isListening = true;
-          // Send accumulated transcript when turn completes
-          if (_responseBuffer.isNotEmpty) {
-            onResponse?.call(_responseBuffer.toString());
-            _responseBuffer.clear();
+        if (data.containsKey('clientContent')) {
+          final clientContent = data['clientContent'] as Map<String, dynamic>;
+          if (clientContent.containsKey('transcript')) {
+            onTranscript?.call(clientContent['transcript'] as String);
           }
-          onTurnComplete?.call();
         }
-      }
-
-      if (data.containsKey('clientContent')) {
-        final clientContent = data['clientContent'] as Map<String, dynamic>;
-        if (clientContent.containsKey('transcript')) {
-          onTranscript?.call(clientContent['transcript'] as String);
-        }
+      } else if (message is List<int>) {
+        onAudio?.call(Uint8List.fromList(message));
       }
     } catch (e) {
       debugPrint('Error handling Gemini Live message: $e');
@@ -353,21 +207,25 @@ class GeminiLiveService {
     onInterrupted?.call();
   }
 
-  /// Disconnect from Gemini Live
+  /// Disconnect from Gemini Live - idempotent
   void disconnect() {
-    if (!_isConnected && _channel == null) return;
-    
-    debugPrint('Gemini Live: Disconnecting...');
-    final wasConnected = _isConnected;
-    _cleanup();
-    
-    if (wasConnected) {
-      onDisconnected?.call();
+    if (_isDisconnecting || !_isConnected) return;
+    _isDisconnecting = true;
+
+    try {
+      _channel?.sink.close();
+    } catch (e) {
+      // Ignore close errors, channel may already be gone
     }
-    debugPrint('Gemini Live: Disconnected');
+    _channel = null;
+    _isConnected = false;
+    _isListening = false;
+    // DO NOT reset _isDisconnecting. It's reset in connect().
+    debugPrint('Disconnected from Gemini Live API');
+    onDisconnected?.call();
   }
 
   void dispose() {
-    _cleanup();
+    disconnect();
   }
 }

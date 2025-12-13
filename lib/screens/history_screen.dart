@@ -303,7 +303,6 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 }
-
 /// Model for conversation history display
 class ConversationHistory {
   final String id;
@@ -324,3 +323,4 @@ class ConversationHistory {
     required this.provider,
   });
 }
+

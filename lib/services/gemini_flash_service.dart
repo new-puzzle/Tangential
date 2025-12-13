@@ -10,6 +10,7 @@ import 'system_prompt.dart';
 class GeminiFlashService {
   GenerativeModel? _model;
   ChatSession? _chatSession;
+  String? _apiKey;
 
   // Conversation history for context
   final List<Map<String, String>> _conversationHistory = [];
@@ -18,8 +19,9 @@ class GeminiFlashService {
 
   /// Initialize with API key
   void initialize(String apiKey) {
+    _apiKey = apiKey;
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-preview-05-20',
       apiKey: apiKey,
       systemInstruction: Content.system(tangentialSystemPrompt),
       generationConfig: GenerationConfig(

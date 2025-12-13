@@ -188,58 +188,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      // Prevent keyboard from pushing content up excessively
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Consumer<AppState>(
-          builder: (context, appState, child) {
-            return Column(
-              children: [
-                // AI Provider Buttons
-                _buildAiProviderSection(appState),
+      body: Consumer<AppState>(
+        builder: (context, appState, child) {
+          return Column(
+            children: [
+              // AI Provider Buttons
+              _buildAiProviderSection(appState),
 
-                const SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-                // File Attachment
-                FileAttachmentWidget(
-                  fileName: appState.attachedFileName,
-                  onAttach: _pickFile,
-                  onClear: () => appState.clearAttachment(),
+              // File Attachment
+              FileAttachmentWidget(
+                fileName: appState.attachedFileName,
+                onAttach: _pickFile,
+                onClear: () => appState.clearAttachment(),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Transcription Display
+              Expanded(
+                child: TranscriptionDisplay(
+                  entries: _transcriptEntries,
+                  scrollController: _scrollController,
+                  conversationState: appState.conversationState,
                 ),
+              ),
 
-                const SizedBox(height: 8),
+              // Start/Stop Button
+              _buildControlButton(appState),
 
-                // Transcription Display - takes remaining space
-                Expanded(
-                  child: TranscriptionDisplay(
-                    entries: _transcriptEntries,
-                    scrollController: _scrollController,
-                    conversationState: appState.conversationState,
-                  ),
-                ),
+              const SizedBox(height: 8),
 
-                // Start/Stop Button
-                _buildControlButton(appState),
+              // Text Input
+              TextInputWidget(
+                controller: _textController,
+                onSend: _sendTextMessage,
+                enabled: appState.isConversationActive,
+              ),
 
-                const SizedBox(height: 8),
-
-                // Text Input - wrapped to prevent overflow
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 0,
-                  ),
-                  child: TextInputWidget(
-                    controller: _textController,
-                    onSend: _sendTextMessage,
-                    enabled: appState.isConversationActive,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-              ],
-            );
-          },
-        ),
+              const SizedBox(height: 8),
+            ],
+          );
+        },
       ),
     );
   }
