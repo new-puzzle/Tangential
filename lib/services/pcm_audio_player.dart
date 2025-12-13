@@ -26,9 +26,11 @@ class PcmAudioPlayer {
   void addAudioChunk(Uint8List chunk) {
     _audioBuffer.addAll(chunk);
     
-    // Start playing when we have enough audio (about 0.5 seconds worth)
-    // 24000 Hz * 2 bytes * 0.5 sec = 24000 bytes
-    if (!_isPlaying && _audioBuffer.length > _sampleRate) {
+    // Start playing when we have enough audio (about 2 seconds worth)
+    // This reduces choppiness by buffering more before starting
+    // 24000 Hz * 2 bytes * 2 sec = 96000 bytes
+    final minBuffer = _sampleRate * 4; // 2 seconds of audio
+    if (!_isPlaying && _audioBuffer.length > minBuffer) {
       _startPlayback();
     }
   }

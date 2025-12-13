@@ -190,8 +190,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       body: Consumer<AppState>(
         builder: (context, appState, child) {
-          return Column(
-            children: [
+          return SafeArea(
+            child: Column(
+              children: [
               // AI Provider Buttons
               _buildAiProviderSection(appState),
 
@@ -228,7 +229,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
 
               const SizedBox(height: 8),
-            ],
+              ],
+            ),
           );
         },
       ),
