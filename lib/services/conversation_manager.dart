@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'audio_handler.dart';
+import 'background_service.dart';
 import 'pcm_audio_player.dart';
 import 'recording_service.dart';
 import 'tts_service.dart';
@@ -262,6 +263,7 @@ class ConversationManager {
     }
 
     await WakelockPlus.enable();
+    await BackgroundService.start(); // Acquire wake lock for pocket mode
     await audioHandler.startConversation(_getAiName());
 
     _isRunning = true;
@@ -624,6 +626,7 @@ class ConversationManager {
     }
 
     await audioHandler.stopConversation();
+    await BackgroundService.stop(); // Release wake lock
     await WakelockPlus.disable();
 
     appState.setConversationActive(false);
