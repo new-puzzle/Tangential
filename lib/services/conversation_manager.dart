@@ -85,6 +85,8 @@ class ConversationManager {
       debugPrint('PCM: Playback complete');
       if (_isRunning && _isRealtimeMode()) {
         _updateState(ConversationState.listening);
+        // Restart mic streaming after AI finishes speaking (for multi-turn)
+        _startMicStreaming();
       }
     };
 
@@ -220,8 +222,35 @@ class ConversationManager {
       return false;
     }
 
+    // Start streaming microphone audio to the AI
+    await _startMicStreaming();
+
     return true;
   }
+
+  /// Start streaming microphone to the realtime API
+  Future<void> _startMicStreaming() async {
+    // Gemini uses 16kHz, OpenAI uses 24kHz
+    final sampleRate = appState.selectedProvider == AiProvider.gemini ? 16000 : 24000;
+    
+    final started = await _recordingService.startStreaming(
+      sampleRate: sampleRate,
+      onData: (audioData) {
+        if (appState.selectedProvider == AiProvider.gemini) {
+          _geminiLiveService.sendAudio(audioData);
+        } else {
+          _openaiRealtimeService.sendAudio(audioData);
+        }
+      },
+    );
+    
+    if (started) {
+      debugPrint('MIC: Streaming to ${appState.selectedProvider} at ${sampleRate}Hz');
+    } else {
+      onError?.call('Failed to start microphone');
+    }
+  }
+
 
   /// Start listening with VAD (for standard modes only)
   void _startListening() {
@@ -381,6 +410,7 @@ class ConversationManager {
     _vadTimer?.cancel();
 
     await _recordingService.stopRecording();
+    await _recordingService.stopStreaming(); // Stop mic streaming for realtime
     await _ttsService.stop();
     await _pcmPlayer.stop(); // Stop any playing audio
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,17 +12,21 @@ class RecordingService {
   final AudioRecorder _recorder = AudioRecorder();
 
   bool _isRecording = false;
+  bool _isStreaming = false;
   String? _currentRecordingPath;
   Timer? _silenceTimer;
+  StreamSubscription<List<int>>? _audioStreamSubscription;
 
   // Callbacks
   Function(Duration)? onRecordingDuration;
   VoidCallback? onSilenceDetected;
+  Function(Uint8List)? onAudioData; // For streaming mode
 
   // Configuration
   int silenceTimeoutSeconds = 120; // 2 minutes default
 
   bool get isRecording => _isRecording;
+  bool get isStreaming => _isStreaming;
   String? get currentRecordingPath => _currentRecordingPath;
 
   /// Request microphone permission
@@ -129,6 +134,74 @@ class RecordingService {
     _currentRecordingPath = null;
   }
 
+  /// Start streaming audio (for realtime modes - Gemini Live, OpenAI Realtime)
+  Future<bool> startStreaming({
+    Function(Uint8List)? onData,
+    int sampleRate = 16000,
+  }) async {
+    if (_isStreaming) return true;
+    if (_isRecording) await stopRecording();
+
+    // Check permission
+    if (!await hasPermission()) {
+      final granted = await requestPermission();
+      if (!granted) {
+        debugPrint('MIC: Permission denied');
+        return false;
+      }
+    }
+
+    try {
+      final config = RecordConfig(
+        encoder: AudioEncoder.pcm16bits,
+        sampleRate: sampleRate,
+        numChannels: 1,
+      );
+
+      final stream = await _recorder.startStream(config);
+      _isStreaming = true;
+      onAudioData = onData;
+
+      _audioStreamSubscription = stream.listen(
+        (data) {
+          final audioBytes = Uint8List.fromList(data);
+          onAudioData?.call(audioBytes);
+        },
+        onError: (e) {
+          debugPrint('MIC: Stream error: $e');
+        },
+        onDone: () {
+          debugPrint('MIC: Stream ended');
+          _isStreaming = false;
+        },
+      );
+
+      debugPrint('MIC: Streaming started at ${sampleRate}Hz');
+      return true;
+    } catch (e) {
+      debugPrint('MIC: Error starting stream: $e');
+      _isStreaming = false;
+      return false;
+    }
+  }
+
+  /// Stop streaming audio
+  Future<void> stopStreaming() async {
+    if (!_isStreaming) return;
+
+    try {
+      await _audioStreamSubscription?.cancel();
+      _audioStreamSubscription = null;
+      await _recorder.stop();
+      _isStreaming = false;
+      onAudioData = null;
+      debugPrint('MIC: Streaming stopped');
+    } catch (e) {
+      debugPrint('MIC: Error stopping stream: $e');
+      _isStreaming = false;
+    }
+  }
+
   /// Get the current amplitude (for visualization)
   Future<double> getAmplitude() async {
     if (!_isRecording) return 0.0;
@@ -168,6 +241,9 @@ class RecordingService {
   /// Dispose resources
   Future<void> dispose() async {
     _cancelSilenceTimer();
+    if (_isStreaming) {
+      await stopStreaming();
+    }
     if (_isRecording) {
       await stopRecording();
     }
