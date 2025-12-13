@@ -280,6 +280,7 @@ class ConversationManager {
       // STANDARD MODE: Use VAD + Whisper STT + AI + TTS
       if (!await _recordingService.requestPermission()) {
         onError?.call('Microphone permission is required.');
+        await stopConversation(); // Clean up wake lock, audio handler, etc.
         return false;
       }
       _startListening();
@@ -294,6 +295,7 @@ class ConversationManager {
     // Request mic permission first
     if (!await _recordingService.requestPermission()) {
       onError?.call('Microphone permission is required.');
+      await stopConversation(); // Clean up wake lock, audio handler, etc.
       return false;
     }
 
