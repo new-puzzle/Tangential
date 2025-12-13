@@ -3,14 +3,19 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as ws_status;
 import 'system_prompt.dart';
 
 /// OpenAI Realtime API service for real-time bidirectional voice conversation.
 class OpenAiRealtimeService {
   WebSocketChannel? _channel;
+  StreamSubscription? _streamSubscription;
   String? _apiKey;
   bool _isConnected = false;
-  bool _isDisconnecting = false;
+  bool _sessionConfigured = false;
+  
+  // Buffer for accumulating response text
+  final StringBuffer _responseBuffer = StringBuffer();
 
   // Callbacks
   Function(String)? onTranscript;
@@ -21,7 +26,7 @@ class OpenAiRealtimeService {
   Function(String)? onError;
   VoidCallback? onAiDone;
 
-  bool get isConnected => _isConnected;
+  bool get isConnected => _isConnected && _sessionConfigured;
 
   void setApiKey(String apiKey) {
     _apiKey = apiKey;
@@ -36,11 +41,18 @@ class OpenAiRealtimeService {
 
     if (_isConnected) return true;
 
+    // Clean up any previous connection
+    _cleanup();
+
     try {
+      // OpenAI Realtime API endpoint
       final uri = Uri.parse(
         'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17',
       );
 
+      debugPrint('OpenAI Realtime: Connecting to WebSocket...');
+      
+      // Use protocol-based authentication (required for WebSocket in most environments)
       _channel = WebSocketChannel.connect(
         uri,
         protocols: [
@@ -50,37 +62,79 @@ class OpenAiRealtimeService {
         ],
       );
 
-      await _channel!.ready;
+      // Wait for connection with timeout
+      await _channel!.ready.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException('WebSocket connection timed out');
+        },
+      );
+      
       _isConnected = true;
-      _isDisconnecting = false;
+      _sessionConfigured = false;
+      debugPrint('OpenAI Realtime: WebSocket connected');
 
-      await _sendSessionConfig();
+      // Set up completer for session configuration confirmation
+      final completer = Completer<bool>();
 
-      _channel!.stream.listen(
-        _handleMessage,
+      _streamSubscription = _channel!.stream.listen(
+        (message) {
+          _handleMessage(message, completer);
+        },
         onError: (error) {
           debugPrint('OpenAI Realtime WebSocket error: $error');
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
           onError?.call('Connection error: $error');
-          disconnect();
+          _cleanup();
+          onDisconnected?.call();
         },
         onDone: () {
-          debugPrint('OpenAI Realtime WebSocket closed');
-          disconnect();
+          debugPrint('OpenAI Realtime WebSocket closed by server');
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
+          final wasConnected = _isConnected;
+          _cleanup();
+          if (wasConnected) {
+            onDisconnected?.call();
+          }
+        },
+        cancelOnError: false,
+      );
+
+      // Send session configuration
+      _sendSessionConfig();
+
+      // Wait for session.created or session.updated confirmation
+      final configSuccess = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('OpenAI Realtime: Session config timed out');
+          return false;
         },
       );
 
+      if (!configSuccess) {
+        debugPrint('OpenAI Realtime: Session configuration failed');
+        _cleanup();
+        return false;
+      }
+
+      _sessionConfigured = true;
       onConnected?.call();
-      debugPrint('Connected to OpenAI Realtime API');
+      debugPrint('OpenAI Realtime: Fully connected and configured');
       return true;
     } catch (e) {
       debugPrint('Error connecting to OpenAI Realtime: $e');
       onError?.call('Failed to connect: $e');
-      _isConnected = false;
+      _cleanup();
       return false;
     }
   }
 
-  Future<void> _sendSessionConfig() async {
+  void _sendSessionConfig() {
     final config = {
       'type': 'session.update',
       'session': {
@@ -99,17 +153,42 @@ class OpenAiRealtimeService {
       },
     };
 
+    debugPrint('OpenAI Realtime: Sending session config');
     _channel?.sink.add(jsonEncode(config));
   }
 
-  void _handleMessage(dynamic message) {
+  void _cleanup() {
+    _streamSubscription?.cancel();
+    _streamSubscription = null;
+    try {
+      _channel?.sink.close(ws_status.normalClosure);
+    } catch (e) {
+      // Ignore close errors
+    }
+    _channel = null;
+    _isConnected = false;
+    _sessionConfigured = false;
+  }
+
+  void _handleMessage(dynamic message, [Completer<bool>? setupCompleter]) {
     try {
       if (message is! String) return;
 
       final data = jsonDecode(message) as Map<String, dynamic>;
       final type = data['type'] as String?;
+      
+      debugPrint('OpenAI Realtime received: $type');
 
       switch (type) {
+        case 'session.created':
+        case 'session.updated':
+          // Session is ready
+          debugPrint('OpenAI Realtime: Session confirmed');
+          if (setupCompleter != null && !setupCompleter.isCompleted) {
+            setupCompleter.complete(true);
+          }
+          break;
+
         case 'conversation.item.input_audio_transcription.completed':
           final transcript = data['transcript'] as String?;
           if (transcript != null && transcript.isNotEmpty) {
@@ -118,9 +197,10 @@ class OpenAiRealtimeService {
           break;
 
         case 'response.audio_transcript.delta':
+          // Accumulate text deltas instead of sending each word
           final delta = data['delta'] as String?;
           if (delta != null) {
-            onResponse?.call(delta);
+            _responseBuffer.write(delta);
           }
           break;
 
@@ -131,15 +211,36 @@ class OpenAiRealtimeService {
             onAudio?.call(audioBytes);
           }
           break;
+          
+        case 'response.audio_transcript.done':
+          // Full transcript complete - send the accumulated text
+          final transcript = data['transcript'] as String?;
+          if (transcript != null && transcript.isNotEmpty) {
+            onResponse?.call(transcript);
+          } else if (_responseBuffer.isNotEmpty) {
+            onResponse?.call(_responseBuffer.toString());
+          }
+          _responseBuffer.clear();
+          break;
 
         case 'response.done':
+          // Ensure any remaining buffered text is sent
+          if (_responseBuffer.isNotEmpty) {
+            onResponse?.call(_responseBuffer.toString());
+            _responseBuffer.clear();
+          }
           onAiDone?.call();
           break;
 
         case 'error':
           final error = data['error'] as Map<String, dynamic>?;
           final errorMsg = error?['message'] as String? ?? 'Unknown error';
+          final errorCode = error?['code'] as String?;
+          debugPrint('OpenAI Realtime error: $errorCode - $errorMsg');
           onError?.call(errorMsg);
+          if (setupCompleter != null && !setupCompleter.isCompleted) {
+            setupCompleter.complete(false);
+          }
           break;
       }
     } catch (e) {
@@ -189,24 +290,21 @@ class OpenAiRealtimeService {
     _channel!.sink.add(jsonEncode({'type': 'response.cancel'}));
   }
 
-  /// Disconnect - idempotent
+  /// Disconnect from OpenAI Realtime
   void disconnect() {
-    if (_isDisconnecting || !_isConnected) return;
-    _isDisconnecting = true;
-
-    try {
-      _channel?.sink.close();
-    } catch (e) {
-      // Ignore close errors
+    if (!_isConnected && _channel == null) return;
+    
+    debugPrint('OpenAI Realtime: Disconnecting...');
+    final wasConnected = _isConnected;
+    _cleanup();
+    
+    if (wasConnected) {
+      onDisconnected?.call();
     }
-    _channel = null;
-    _isConnected = false;
-    // DO NOT reset _isDisconnecting. It is reset in connect().
-    debugPrint('Disconnected from OpenAI Realtime API');
-    onDisconnected?.call();
+    debugPrint('OpenAI Realtime: Disconnected');
   }
 
   void dispose() {
-    disconnect();
+    _cleanup();
   }
 }

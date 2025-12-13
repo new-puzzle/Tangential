@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Service for recording audio from the microphone.
 /// Handles permissions, recording state, and audio file management.
+/// Supports both file-based recording and real-time streaming.
 class RecordingService {
   final AudioRecorder _recorder = AudioRecorder();
 
@@ -134,52 +135,73 @@ class RecordingService {
     _currentRecordingPath = null;
   }
 
-  /// Start streaming audio (for realtime modes - Gemini Live, OpenAI Realtime)
+  /// Start streaming audio in PCM format for real-time APIs
+  /// Audio is Int16 PCM Little Endian, mono
+  /// sampleRate: 16000 for Gemini Live, 24000 for OpenAI Realtime
   Future<bool> startStreaming({
     Function(Uint8List)? onData,
     int sampleRate = 16000,
   }) async {
-    if (_isStreaming) return true;
-    if (_isRecording) await stopRecording();
+    debugPrint('MIC: startStreaming called (sampleRate=$sampleRate)');
+    
+    if (_isStreaming || _isRecording) {
+      debugPrint('MIC: Stopping existing recording/streaming first');
+      await stopStreaming();
+      await stopRecording();
+    }
 
     // Check permission
     if (!await hasPermission()) {
+      debugPrint('MIC: No permission, requesting...');
       final granted = await requestPermission();
       if (!granted) {
-        debugPrint('MIC: Permission denied');
+        debugPrint('MIC: Permission denied!');
         return false;
       }
     }
+    debugPrint('MIC: Permission OK');
 
     try {
+      // Configure for PCM streaming - sample rate depends on the API
       final config = RecordConfig(
         encoder: AudioEncoder.pcm16bits,
         sampleRate: sampleRate,
         numChannels: 1,
       );
 
+      debugPrint('MIC: Calling _recorder.startStream...');
       final stream = await _recorder.startStream(config);
+      debugPrint('MIC: Stream created successfully');
+      
       _isStreaming = true;
       onAudioData = onData;
+      
+      int chunkCount = 0;
 
       _audioStreamSubscription = stream.listen(
         (data) {
+          chunkCount++;
+          // Log every 25 chunks to show mic is active
+          if (chunkCount % 25 == 0) {
+            debugPrint('MIC: Received $chunkCount chunks (${data.length} bytes each)');
+          }
+          // data is already Int16 PCM Little Endian from the record package
           final audioBytes = Uint8List.fromList(data);
           onAudioData?.call(audioBytes);
         },
-        onError: (e) {
-          debugPrint('MIC: Stream error: $e');
+        onError: (error) {
+          debugPrint('MIC ERROR: Stream error: $error');
         },
         onDone: () {
-          debugPrint('MIC: Stream ended');
+          debugPrint('MIC: Stream ended (onDone)');
           _isStreaming = false;
         },
       );
 
-      debugPrint('MIC: Streaming started at ${sampleRate}Hz');
+      debugPrint('MIC: Streaming started successfully');
       return true;
     } catch (e) {
-      debugPrint('MIC: Error starting stream: $e');
+      debugPrint('MIC ERROR: Failed to start stream: $e');
       _isStreaming = false;
       return false;
     }
@@ -195,19 +217,27 @@ class RecordingService {
       await _recorder.stop();
       _isStreaming = false;
       onAudioData = null;
-      debugPrint('MIC: Streaming stopped');
+      debugPrint('Stopped audio streaming');
     } catch (e) {
-      debugPrint('MIC: Error stopping stream: $e');
+      debugPrint('Error stopping audio stream: $e');
       _isStreaming = false;
     }
   }
 
   /// Get the current amplitude (for visualization)
+  /// Returns normalized amplitude 0.0-1.0, or -1.0 on timeout/error
   Future<double> getAmplitude() async {
     if (!_isRecording) return 0.0;
 
     try {
-      final amplitude = await _recorder.getAmplitude();
+      // Add timeout to prevent hanging - record package can hang on some devices
+      final amplitude = await _recorder.getAmplitude().timeout(
+        const Duration(milliseconds: 150),
+        onTimeout: () {
+          debugPrint('getAmplitude() timed out');
+          return Amplitude(current: -60, max: -60);
+        },
+      );
 
       // Reset silence timer on voice activity
       if (amplitude.current > -40) {
@@ -219,7 +249,8 @@ class RecordingService {
       final normalized = (amplitude.current + 60) / 60;
       return normalized.clamp(0.0, 1.0);
     } catch (e) {
-      return 0.0;
+      debugPrint('getAmplitude() error: $e');
+      return -1.0; // Signal error
     }
   }
 
