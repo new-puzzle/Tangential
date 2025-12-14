@@ -51,12 +51,12 @@ class ConversationManager {
   int _vadErrorCount = 0;
 
   // VAD tuning - simple fixed thresholds that work reliably
-  static const int _silenceThreshold = 8; // ~1.6 seconds of silence (was 3)
+  static const int _silenceThreshold = 6; // ~1.2 seconds of silence
   static const double _speechThreshold =
-      0.05; // Fixed threshold for speech detection
+      0.02; // Very low threshold to detect speech (was 0.05)
   static const int _maxVadErrors = 3;
   static const int _maxRecordingTicks =
-      100; // ~20 seconds max recording (was 75)
+      75; // ~15 seconds max recording
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -498,19 +498,27 @@ class ConversationManager {
 
     _recordingService.startRecording().then((path) {
       if (path == null) {
+        debugPrint('VAD ERROR: Failed to start recording - path is null');
         onError?.call('Failed to start recording');
         return;
       }
 
       debugPrint(
-        'Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)',
+        'VAD: Recording started at $path - timer starting (max ${_maxRecordingTicks * 200}ms)',
       );
 
       _vadTimer?.cancel();
       _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
-        if (_vadCheckInProgress) return;
+        if (_vadCheckInProgress) {
+          debugPrint('VAD: Skipping tick - check in progress');
+          return;
+        }
         _checkVoiceActivity();
       });
+      debugPrint('VAD: Timer started successfully');
+    }).catchError((e) {
+      debugPrint('VAD ERROR: startRecording threw exception: $e');
+      onError?.call('Failed to start recording: $e');
     });
   }
 
