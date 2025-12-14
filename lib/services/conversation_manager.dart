@@ -210,12 +210,27 @@ class ConversationManager {
       debugPrint('Gemini Live: Turn complete - audio done');
       _handleAudioComplete();
     };
-    _geminiLiveService.onDisconnected = () {
+    _geminiLiveService.onDisconnected = () async {
       debugPrint('Gemini Live: Disconnected callback fired');
       _pcmAudioPlayer.stop();
       if (_isRunning) {
-        onError?.call('Gemini Live disconnected unexpectedly');
-        stopConversation();
+        // If screen is off (pocket mode), try to reconnect silently
+        if (_isScreenOff) {
+          debugPrint('POCKET MODE: Gemini disconnected, attempting reconnect...');
+          await Future.delayed(const Duration(seconds: 1));
+          if (_isRunning && await _geminiLiveService.connect()) {
+            debugPrint('POCKET MODE: Gemini reconnected successfully');
+            await _startAudioStreaming();
+          } else {
+            debugPrint('POCKET MODE: Gemini reconnect failed');
+            onError?.call('Gemini Live disconnected - reconnect failed');
+            stopConversation();
+          }
+        } else {
+          // Screen is on - show error and stop
+          onError?.call('Gemini Live disconnected unexpectedly');
+          stopConversation();
+        }
       }
     };
 
@@ -237,12 +252,27 @@ class ConversationManager {
       debugPrint('OpenAI Realtime: AI done - audio complete');
       _handleAudioComplete();
     };
-    _openaiRealtimeService.onDisconnected = () {
+    _openaiRealtimeService.onDisconnected = () async {
       debugPrint('OpenAI Realtime: Disconnected callback fired');
       _pcmAudioPlayer.stop();
       if (_isRunning) {
-        onError?.call('OpenAI Realtime disconnected unexpectedly');
-        stopConversation();
+        // If screen is off (pocket mode), try to reconnect silently
+        if (_isScreenOff) {
+          debugPrint('POCKET MODE: OpenAI disconnected, attempting reconnect...');
+          await Future.delayed(const Duration(seconds: 1));
+          if (_isRunning && await _openaiRealtimeService.connect()) {
+            debugPrint('POCKET MODE: OpenAI reconnected successfully');
+            await _startAudioStreaming();
+          } else {
+            debugPrint('POCKET MODE: OpenAI reconnect failed');
+            onError?.call('OpenAI Realtime disconnected - reconnect failed');
+            stopConversation();
+          }
+        } else {
+          // Screen is on - show error and stop
+          onError?.call('OpenAI Realtime disconnected unexpectedly');
+          stopConversation();
+        }
       }
     };
   }
