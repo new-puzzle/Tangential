@@ -216,7 +216,9 @@ class ConversationManager {
       if (_isRunning) {
         // If screen is off (pocket mode), try to reconnect silently
         if (_isScreenOff) {
-          debugPrint('POCKET MODE: Gemini disconnected, attempting reconnect...');
+          debugPrint(
+            'POCKET MODE: Gemini disconnected, attempting reconnect...',
+          );
           await Future.delayed(const Duration(seconds: 1));
           if (_isRunning && await _geminiLiveService.connect()) {
             debugPrint('POCKET MODE: Gemini reconnected successfully');
@@ -258,7 +260,9 @@ class ConversationManager {
       if (_isRunning) {
         // If screen is off (pocket mode), try to reconnect silently
         if (_isScreenOff) {
-          debugPrint('POCKET MODE: OpenAI disconnected, attempting reconnect...');
+          debugPrint(
+            'POCKET MODE: OpenAI disconnected, attempting reconnect...',
+          );
           await Future.delayed(const Duration(seconds: 1));
           if (_isRunning && await _openaiRealtimeService.connect()) {
             debugPrint('POCKET MODE: OpenAI reconnected successfully');

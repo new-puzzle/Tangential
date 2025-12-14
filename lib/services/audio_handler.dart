@@ -27,7 +27,7 @@ class TangentialAudioHandler extends BaseAudioHandler with SeekHandler {
         androidNotificationChannelId: 'com.tangential.audio',
         androidNotificationChannelName: 'Tangential Voice',
         androidNotificationChannelDescription: 'Voice companion notifications',
-        androidStopForegroundOnPause: true,
+        androidStopForegroundOnPause: false, // Keep foreground service alive for pocket mode
         androidNotificationClickStartsActivity: true,
         fastForwardInterval: Duration(seconds: 10),
         rewindInterval: Duration(seconds: 10),
