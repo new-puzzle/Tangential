@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.PowerManager
 import android.util.Log
@@ -17,6 +18,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val TAG = "TangentialBackground"
     
     private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
     private var methodChannel: MethodChannel? = null
     private var screenReceiver: BroadcastReceiver? = null
 
@@ -52,6 +54,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun acquireWakeLock(): Boolean {
         return try {
+            // Acquire CPU wake lock
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
             wakeLock = powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
@@ -60,6 +63,18 @@ class MainActivity : FlutterFragmentActivity() {
             // Acquire for 2 hours max (safety limit)
             wakeLock?.acquire(2 * 60 * 60 * 1000L)
             Log.d(TAG, "Wake lock acquired (PARTIAL_WAKE_LOCK)")
+            
+            // Acquire WiFi lock to keep network alive
+            try {
+                val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "Tangential::WifiLock")
+                wifiLock?.acquire()
+                Log.d(TAG, "WiFi lock acquired (WIFI_MODE_FULL_HIGH_PERF)")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to acquire WiFi lock: ${e.message}")
+                // Continue without WiFi lock - not critical
+            }
+            
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to acquire wake lock: ${e.message}")
@@ -68,6 +83,18 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun releaseWakeLock() {
+        // Release WiFi lock
+        try {
+            if (wifiLock?.isHeld == true) {
+                wifiLock?.release()
+                Log.d(TAG, "WiFi lock released")
+            }
+            wifiLock = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to release WiFi lock: ${e.message}")
+        }
+        
+        // Release CPU wake lock
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()
