@@ -19,7 +19,7 @@ class AppState extends ChangeNotifier {
 
   // Current AI selection
   AiProvider _selectedProvider = AiProvider.gemini;
-  Map<AiProvider, AiMode> _providerModes = {
+  final Map<AiProvider, AiMode> _providerModes = {
     AiProvider.gemini: AiMode.live,
     AiProvider.openai: AiMode.live,
     AiProvider.deepseek: AiMode.standard,
@@ -33,7 +33,7 @@ class AppState extends ChangeNotifier {
   // Transcription
   String _userTranscript = '';
   String _aiTranscript = '';
-  List<TranscriptEntry> _transcriptHistory = [];
+  final List<TranscriptEntry> _transcriptHistory = [];
 
   // File attachment
   File? _attachedFile;

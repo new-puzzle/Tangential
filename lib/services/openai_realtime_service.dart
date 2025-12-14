@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
@@ -13,7 +12,7 @@ class OpenAiRealtimeService {
   String? _apiKey;
   bool _isConnected = false;
   bool _sessionConfigured = false;
-  
+
   // Buffer for accumulating response text
   final StringBuffer _responseBuffer = StringBuffer();
 
@@ -51,7 +50,7 @@ class OpenAiRealtimeService {
       );
 
       debugPrint('OpenAI Realtime: Connecting to WebSocket...');
-      
+
       // Use protocol-based authentication (required for WebSocket in most environments)
       _channel = WebSocketChannel.connect(
         uri,
@@ -69,7 +68,7 @@ class OpenAiRealtimeService {
           throw TimeoutException('WebSocket connection timed out');
         },
       );
-      
+
       _isConnected = true;
       _sessionConfigured = false;
       debugPrint('OpenAI Realtime: WebSocket connected');
@@ -176,7 +175,7 @@ class OpenAiRealtimeService {
 
       final data = jsonDecode(message) as Map<String, dynamic>;
       final type = data['type'] as String?;
-      
+
       debugPrint('OpenAI Realtime received: $type');
 
       switch (type) {
@@ -211,7 +210,7 @@ class OpenAiRealtimeService {
             onAudio?.call(audioBytes);
           }
           break;
-          
+
         case 'response.audio_transcript.done':
           // Full transcript complete - send the accumulated text
           final transcript = data['transcript'] as String?;
@@ -293,11 +292,11 @@ class OpenAiRealtimeService {
   /// Disconnect from OpenAI Realtime
   void disconnect() {
     if (!_isConnected && _channel == null) return;
-    
+
     debugPrint('OpenAI Realtime: Disconnecting...');
     final wasConnected = _isConnected;
     _cleanup();
-    
+
     if (wasConnected) {
       onDisconnected?.call();
     }

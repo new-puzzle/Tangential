@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -143,7 +142,7 @@ class RecordingService {
     int sampleRate = 16000,
   }) async {
     debugPrint('MIC: startStreaming called (sampleRate=$sampleRate)');
-    
+
     if (_isStreaming || _isRecording) {
       debugPrint('MIC: Stopping existing recording/streaming first');
       await stopStreaming();
@@ -172,10 +171,10 @@ class RecordingService {
       debugPrint('MIC: Calling _recorder.startStream...');
       final stream = await _recorder.startStream(config);
       debugPrint('MIC: Stream created successfully');
-      
+
       _isStreaming = true;
       onAudioData = onData;
-      
+
       int chunkCount = 0;
 
       _audioStreamSubscription = stream.listen(
@@ -183,7 +182,9 @@ class RecordingService {
           chunkCount++;
           // Log every 25 chunks to show mic is active
           if (chunkCount % 25 == 0) {
-            debugPrint('MIC: Received $chunkCount chunks (${data.length} bytes each)');
+            debugPrint(
+              'MIC: Received $chunkCount chunks (${data.length} bytes each)',
+            );
           }
           // data is already Int16 PCM Little Endian from the record package
           final audioBytes = Uint8List.fromList(data);

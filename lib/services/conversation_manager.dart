@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -50,15 +49,14 @@ class ConversationManager {
   int _totalRecordingTicks = 0; // Total recording time
   bool _vadCheckInProgress = false;
   int _vadErrorCount = 0;
-  double _peakAmplitude = 0.0;
-  double _recentAvgAmplitude = 0.0; // Rolling average for noise floor
-  
-  // VAD tuning - optimized for walking/noisy environments
-  static const int _silenceThreshold = 3; // ~0.6 seconds of silence after speech
-  static const double _speechStartThreshold = 0.08; // Very low - detect any speech
+
+  // VAD tuning - simple fixed thresholds that work reliably
+  static const int _silenceThreshold = 8; // ~1.6 seconds of silence (was 3)
+  static const double _speechThreshold =
+      0.05; // Fixed threshold for speech detection
   static const int _maxVadErrors = 3;
-  static const int _maxRecordingTicks = 75; // ~15 seconds max recording
-  static const int _minSpeechTicks = 5; // Need at least 1 second of speech
+  static const int _maxRecordingTicks =
+      100; // ~20 seconds max recording (was 75)
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -118,22 +116,57 @@ class ConversationManager {
     _setupBackgroundCallbacks();
   }
 
+  // Keep-alive timer for pocket mode
+  Timer? _pocketModeTimer;
+  bool _isScreenOff = false;
+
   void _setupBackgroundCallbacks() {
-    // Handle screen off - keep audio streaming alive
+    // Handle screen off - start keep-alive checks
     BackgroundService.onScreenOff = () {
-      debugPrint('POCKET MODE: Screen OFF - maintaining audio stream');
-      // Audio should continue due to wake lock, but log for debugging
+      debugPrint('POCKET MODE: Screen OFF - starting keep-alive');
+      _isScreenOff = true;
+      _startPocketModeKeepAlive();
     };
-    
-    // Handle screen on - restart audio if needed
+
+    // Handle screen on - stop keep-alive, restart audio if needed
     BackgroundService.onScreenOn = () {
       debugPrint('POCKET MODE: Screen ON');
+      _isScreenOff = false;
+      _stopPocketModeKeepAlive();
+
       // Restart mic streaming if it died during screen off
       if (_isRunning && _isRealtimeMode() && !_isSpeaking) {
         debugPrint('POCKET MODE: Restarting mic streaming after screen on');
         _startAudioStreaming();
       }
     };
+  }
+
+  void _startPocketModeKeepAlive() {
+    _pocketModeTimer?.cancel();
+    _pocketModeTimer = Timer.periodic(const Duration(seconds: 5), (
+      timer,
+    ) async {
+      if (!_isRunning || !_isScreenOff) {
+        timer.cancel();
+        return;
+      }
+
+      debugPrint('POCKET MODE: Keep-alive check');
+
+      // For realtime modes, check if streaming is alive
+      if (_isRealtimeMode() && !_isSpeaking) {
+        if (!_recordingService.isStreaming) {
+          debugPrint('POCKET MODE: Audio streaming died, restarting...');
+          await _startAudioStreaming();
+        }
+      }
+    });
+  }
+
+  void _stopPocketModeKeepAlive() {
+    _pocketModeTimer?.cancel();
+    _pocketModeTimer = null;
   }
 
   void _setupRealtimeCallbacks() {
@@ -201,10 +234,10 @@ class ConversationManager {
     // Set sample rate based on provider (Gemini = 24kHz, OpenAI = 24kHz)
     final sampleRate = _getRealtimeSampleRate();
     _pcmAudioPlayer.setSampleRate(sampleRate);
-    
+
     // Add to player for real-time playback
     _pcmAudioPlayer.addAudioChunk(audioData);
-    
+
     debugPrint(
       'Playing audio chunk: ${audioData.length} bytes (buffered: ${_pcmAudioPlayer.bufferedBytes})',
     );
@@ -212,7 +245,7 @@ class ConversationManager {
     // Update state to show we're receiving/playing audio
     _updateState(ConversationState.speaking);
   }
-  
+
   /// Signal that AI has finished sending audio
   void _handleAudioComplete() {
     _pcmAudioPlayer.audioComplete();
@@ -366,7 +399,9 @@ class ConversationManager {
     final isGemini = appState.selectedProvider == AiProvider.gemini;
     // Gemini Live: 16kHz, OpenAI Realtime: 24kHz
     final sampleRate = isGemini ? 16000 : 24000;
-    debugPrint('STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate');
+    debugPrint(
+      'STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate',
+    );
 
     final success = await _recordingService.startStreaming(
       sampleRate: sampleRate,
@@ -400,7 +435,7 @@ class ConversationManager {
     if (!_isRunning || _isProcessing || _isRealtimeMode()) return;
 
     _updateState(ConversationState.listening);
-    
+
     // Reset all VAD state
     _hasDetectedSpeech = false;
     _silenceCount = 0;
@@ -408,8 +443,6 @@ class ConversationManager {
     _totalRecordingTicks = 0;
     _vadCheckInProgress = false;
     _vadErrorCount = 0;
-    _peakAmplitude = 0.0;
-    _recentAvgAmplitude = 0.0;
 
     _recordingService.startRecording().then((path) {
       if (path == null) {
@@ -417,7 +450,9 @@ class ConversationManager {
         return;
       }
 
-      debugPrint('Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)');
+      debugPrint(
+        'Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)',
+      );
 
       _vadTimer?.cancel();
       _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
@@ -427,7 +462,7 @@ class ConversationManager {
     });
   }
 
-  /// Check voice activity based on amplitude (optimized for noisy environments)
+  /// Check voice activity based on amplitude - simple fixed threshold approach
   Future<void> _checkVoiceActivity() async {
     _vadCheckInProgress = true;
 
@@ -438,7 +473,7 @@ class ConversationManager {
       }
 
       _totalRecordingTicks++;
-      
+
       // SAFETY: Max recording time reached - process whatever we have
       if (_totalRecordingTicks >= _maxRecordingTicks) {
         debugPrint('VAD: Max recording time reached, processing...');
@@ -458,7 +493,6 @@ class ConversationManager {
           if (_hasDetectedSpeech) {
             await _processRecording();
           } else {
-            _isProcessing = false;
             if (_isRunning) _startListening();
           }
         }
@@ -466,52 +500,37 @@ class ConversationManager {
       }
       _vadErrorCount = 0;
 
-      // Update rolling average (noise floor estimation)
-      _recentAvgAmplitude = (_recentAvgAmplitude * 0.8) + (amplitude * 0.2);
-      
-      // Track peak amplitude during speech
-      if (_hasDetectedSpeech && amplitude > _peakAmplitude) {
-        _peakAmplitude = amplitude;
-      }
-
-      // Dynamic threshold: speech is anything significantly above noise floor
-      final speechThreshold = (_recentAvgAmplitude * 1.5).clamp(_speechStartThreshold, 0.5);
-      
-      // Silence threshold: dropped to near noise floor level
-      final silenceThreshold = _hasDetectedSpeech 
-          ? (_peakAmplitude * 0.3).clamp(_recentAvgAmplitude * 1.1, _peakAmplitude * 0.5)
-          : _speechStartThreshold;
-
-      if (amplitude > speechThreshold) {
+      // Simple fixed threshold logic - works reliably
+      if (amplitude > _speechThreshold) {
         // Speech detected
         if (!_hasDetectedSpeech) {
-          debugPrint('VAD: Speech started! (amp=${amplitude.toStringAsFixed(3)}, threshold=${speechThreshold.toStringAsFixed(3)})');
-          _peakAmplitude = amplitude;
+          debugPrint(
+            'VAD: Speech started! (amp=${amplitude.toStringAsFixed(3)})',
+          );
         }
         _hasDetectedSpeech = true;
         _speechDuration++;
         _silenceCount = 0;
       } else if (_hasDetectedSpeech) {
-        // Was speaking, now quieter - is it silence?
-        if (amplitude < silenceThreshold) {
-          _silenceCount++;
-          
-          // Only process if we have enough speech AND enough silence
-          if (_speechDuration >= _minSpeechTicks && _silenceCount >= _silenceThreshold) {
-            debugPrint('VAD: Speech ended after ${_speechDuration * 200}ms, processing...');
-            _vadTimer?.cancel();
-            await _processRecording();
-            return;
-          }
-        } else {
-          // Amplitude between speech and silence thresholds - keep listening
-          if (_silenceCount > 0) _silenceCount--;
+        // Was speaking, now quiet
+        _silenceCount++;
+
+        // Process after enough silence
+        if (_silenceCount >= _silenceThreshold) {
+          debugPrint(
+            'VAD: Speech ended after ${_speechDuration * 200}ms, silence=${_silenceCount * 200}ms, processing...',
+          );
+          _vadTimer?.cancel();
+          await _processRecording();
+          return;
         }
       }
-      
+
       // Debug every 5 ticks (1 second)
       if (_totalRecordingTicks % 5 == 0) {
-        debugPrint('VAD: tick=$_totalRecordingTicks amp=${amplitude.toStringAsFixed(3)} noise=${_recentAvgAmplitude.toStringAsFixed(3)} speech=$_hasDetectedSpeech dur=$_speechDuration silence=$_silenceCount');
+        debugPrint(
+          'VAD: tick=$_totalRecordingTicks amp=${amplitude.toStringAsFixed(3)} speech=$_hasDetectedSpeech dur=$_speechDuration silence=$_silenceCount',
+        );
       }
     } finally {
       _vadCheckInProgress = false;
@@ -631,6 +650,7 @@ class ConversationManager {
     _isSpeaking = false;
 
     _vadTimer?.cancel();
+    _stopPocketModeKeepAlive();
 
     // Stop both streaming and recording
     await _stopAudioStreaming();

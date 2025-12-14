@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
@@ -15,7 +14,7 @@ class GeminiLiveService {
   bool _isConnected = false;
   bool _isListening = false;
   bool _setupComplete = false;
-  
+
   // Buffer for accumulating response text
   final StringBuffer _responseBuffer = StringBuffer();
 
@@ -57,7 +56,7 @@ class GeminiLiveService {
 
       debugPrint('Gemini Live: Connecting to WebSocket...');
       _channel = WebSocketChannel.connect(uri);
-      
+
       // Wait for connection with timeout
       await _channel!.ready.timeout(
         const Duration(seconds: 10),
@@ -65,14 +64,14 @@ class GeminiLiveService {
           throw TimeoutException('WebSocket connection timed out');
         },
       );
-      
+
       _isConnected = true;
       _setupComplete = false;
       debugPrint('Gemini Live: WebSocket connected, sending setup...');
 
       // Set up stream listener BEFORE sending setup message
       final completer = Completer<bool>();
-      
+
       _streamSubscription = _channel!.stream.listen(
         (message) {
           _handleMessage(message, completer);
@@ -90,7 +89,9 @@ class GeminiLiveService {
           // Try to get close code/reason
           final closeCode = _channel?.closeCode;
           final closeReason = _channel?.closeReason;
-          debugPrint('Gemini Live WebSocket closed by server - code: $closeCode, reason: $closeReason');
+          debugPrint(
+            'Gemini Live WebSocket closed by server - code: $closeCode, reason: $closeReason',
+          );
           if (!completer.isCompleted) {
             completer.complete(false);
           }
@@ -194,7 +195,7 @@ class GeminiLiveService {
           return;
         }
       }
-      
+
       if (messageStr == null) {
         debugPrint('Gemini Live: Unknown message type: ${message.runtimeType}');
         return;
@@ -208,7 +209,7 @@ class GeminiLiveService {
         debugPrint('Gemini Live: Non-JSON message: $messageStr');
         return;
       }
-      
+
       debugPrint('Gemini Live received keys: ${data.keys.toList()}');
 
       // Check for setup completion response
@@ -247,8 +248,7 @@ class GeminiLiveService {
         }
 
         if (serverContent.containsKey('modelTurn')) {
-          final modelTurn =
-              serverContent['modelTurn'] as Map<String, dynamic>;
+          final modelTurn = serverContent['modelTurn'] as Map<String, dynamic>;
           final parts = modelTurn['parts'] as List<dynamic>?;
 
           if (parts != null) {
@@ -257,8 +257,7 @@ class GeminiLiveService {
                 // DON'T show text from modelTurn - that's internal thinking
                 // The actual spoken transcript comes from outputAudioTranscription
                 if (part.containsKey('inlineData')) {
-                  final inlineData =
-                      part['inlineData'] as Map<String, dynamic>;
+                  final inlineData = part['inlineData'] as Map<String, dynamic>;
                   final audioData = inlineData['data'] as String?;
                   if (audioData != null) {
                     final audioBytes = base64Decode(audioData);
@@ -269,11 +268,12 @@ class GeminiLiveService {
             }
           }
         }
-        
+
         // Handle audio transcription (what the AI actually said)
         // Accumulate text until turn is complete
         if (serverContent.containsKey('outputTranscription')) {
-          final transcription = serverContent['outputTranscription'] as Map<String, dynamic>?;
+          final transcription =
+              serverContent['outputTranscription'] as Map<String, dynamic>?;
           final text = transcription?['text'] as String?;
           if (text != null && text.isNotEmpty) {
             _responseBuffer.write(text);
@@ -356,11 +356,11 @@ class GeminiLiveService {
   /// Disconnect from Gemini Live
   void disconnect() {
     if (!_isConnected && _channel == null) return;
-    
+
     debugPrint('Gemini Live: Disconnecting...');
     final wasConnected = _isConnected;
     _cleanup();
-    
+
     if (wasConnected) {
       onDisconnected?.call();
     }
