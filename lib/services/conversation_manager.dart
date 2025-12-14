@@ -52,13 +52,15 @@ class ConversationManager {
   int _vadErrorCount = 0;
   double _peakAmplitude = 0.0;
   double _recentAvgAmplitude = 0.0; // Rolling average for noise floor
-  
+
   // VAD tuning - optimized for walking/noisy environments
-  static const int _silenceThreshold = 3; // ~0.6 seconds of silence after speech
-  static const double _speechStartThreshold = 0.08; // Very low - detect any speech
+  static const int _silenceThreshold =
+      2; // ~0.4 seconds of silence - faster response
+  static const double _speechStartThreshold =
+      0.08; // Very low - detect any speech
   static const int _maxVadErrors = 3;
   static const int _maxRecordingTicks = 75; // ~15 seconds max recording
-  static const int _minSpeechTicks = 5; // Need at least 1 second of speech
+  static const int _minSpeechTicks = 3; // Need at least 0.6 seconds of speech
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -182,10 +184,10 @@ class ConversationManager {
     // Set sample rate based on provider (Gemini = 24kHz, OpenAI = 24kHz)
     final sampleRate = _getRealtimeSampleRate();
     _pcmAudioPlayer.setSampleRate(sampleRate);
-    
+
     // Add to player for real-time playback
     _pcmAudioPlayer.addAudioChunk(audioData);
-    
+
     debugPrint(
       'Playing audio chunk: ${audioData.length} bytes (buffered: ${_pcmAudioPlayer.bufferedBytes})',
     );
@@ -193,7 +195,7 @@ class ConversationManager {
     // Update state to show we're receiving/playing audio
     _updateState(ConversationState.speaking);
   }
-  
+
   /// Signal that AI has finished sending audio
   void _handleAudioComplete() {
     _pcmAudioPlayer.audioComplete();
@@ -345,7 +347,9 @@ class ConversationManager {
     final isGemini = appState.selectedProvider == AiProvider.gemini;
     // Gemini Live: 16kHz, OpenAI Realtime: 24kHz
     final sampleRate = isGemini ? 16000 : 24000;
-    debugPrint('STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate');
+    debugPrint(
+      'STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate',
+    );
 
     final success = await _recordingService.startStreaming(
       sampleRate: sampleRate,
@@ -379,7 +383,7 @@ class ConversationManager {
     if (!_isRunning || _isProcessing || _isRealtimeMode()) return;
 
     _updateState(ConversationState.listening);
-    
+
     // Reset all VAD state
     _hasDetectedSpeech = false;
     _silenceCount = 0;
@@ -396,7 +400,9 @@ class ConversationManager {
         return;
       }
 
-      debugPrint('Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)');
+      debugPrint(
+        'Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)',
+      );
 
       _vadTimer?.cancel();
       _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
@@ -417,7 +423,7 @@ class ConversationManager {
       }
 
       _totalRecordingTicks++;
-      
+
       // SAFETY: Max recording time reached - process whatever we have
       if (_totalRecordingTicks >= _maxRecordingTicks) {
         debugPrint('VAD: Max recording time reached, processing...');
@@ -447,24 +453,32 @@ class ConversationManager {
 
       // Update rolling average (noise floor estimation)
       _recentAvgAmplitude = (_recentAvgAmplitude * 0.8) + (amplitude * 0.2);
-      
+
       // Track peak amplitude during speech
       if (_hasDetectedSpeech && amplitude > _peakAmplitude) {
         _peakAmplitude = amplitude;
       }
 
       // Dynamic threshold: speech is anything significantly above noise floor
-      final speechThreshold = (_recentAvgAmplitude * 1.5).clamp(_speechStartThreshold, 0.5);
-      
+      final speechThreshold = (_recentAvgAmplitude * 1.5).clamp(
+        _speechStartThreshold,
+        0.5,
+      );
+
       // Silence threshold: dropped to near noise floor level
-      final silenceThreshold = _hasDetectedSpeech 
-          ? (_peakAmplitude * 0.3).clamp(_recentAvgAmplitude * 1.1, _peakAmplitude * 0.5)
+      final silenceThreshold = _hasDetectedSpeech
+          ? (_peakAmplitude * 0.3).clamp(
+              _recentAvgAmplitude * 1.1,
+              _peakAmplitude * 0.5,
+            )
           : _speechStartThreshold;
 
       if (amplitude > speechThreshold) {
         // Speech detected
         if (!_hasDetectedSpeech) {
-          debugPrint('VAD: Speech started! (amp=${amplitude.toStringAsFixed(3)}, threshold=${speechThreshold.toStringAsFixed(3)})');
+          debugPrint(
+            'VAD: Speech started! (amp=${amplitude.toStringAsFixed(3)}, threshold=${speechThreshold.toStringAsFixed(3)})',
+          );
           _peakAmplitude = amplitude;
         }
         _hasDetectedSpeech = true;
@@ -474,10 +488,13 @@ class ConversationManager {
         // Was speaking, now quieter - is it silence?
         if (amplitude < silenceThreshold) {
           _silenceCount++;
-          
+
           // Only process if we have enough speech AND enough silence
-          if (_speechDuration >= _minSpeechTicks && _silenceCount >= _silenceThreshold) {
-            debugPrint('VAD: Speech ended after ${_speechDuration * 200}ms, processing...');
+          if (_speechDuration >= _minSpeechTicks &&
+              _silenceCount >= _silenceThreshold) {
+            debugPrint(
+              'VAD: Speech ended after ${_speechDuration * 200}ms, processing...',
+            );
             _vadTimer?.cancel();
             await _processRecording();
             return;
@@ -487,10 +504,12 @@ class ConversationManager {
           if (_silenceCount > 0) _silenceCount--;
         }
       }
-      
+
       // Debug every 5 ticks (1 second)
       if (_totalRecordingTicks % 5 == 0) {
-        debugPrint('VAD: tick=$_totalRecordingTicks amp=${amplitude.toStringAsFixed(3)} noise=${_recentAvgAmplitude.toStringAsFixed(3)} speech=$_hasDetectedSpeech dur=$_speechDuration silence=$_silenceCount');
+        debugPrint(
+          'VAD: tick=$_totalRecordingTicks amp=${amplitude.toStringAsFixed(3)} noise=${_recentAvgAmplitude.toStringAsFixed(3)} speech=$_hasDetectedSpeech dur=$_speechDuration silence=$_silenceCount',
+        );
       }
     } finally {
       _vadCheckInProgress = false;
