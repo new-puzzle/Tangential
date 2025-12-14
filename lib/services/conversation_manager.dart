@@ -45,17 +45,10 @@ class ConversationManager {
   Timer? _vadTimer;
   bool _hasDetectedSpeech = false;
   int _silenceCount = 0;
-  int _speechDuration = 0; // How long user has been speaking (in VAD ticks)
-  int _totalRecordingTicks = 0; // Total recording time
-  bool _vadCheckInProgress = false;
-  int _vadErrorCount = 0;
 
-  // VAD tuning - simple fixed thresholds that work reliably
-  static const int _silenceThreshold = 6; // ~1.2 seconds of silence
-  static const double _speechThreshold =
-      0.02; // Very low threshold to detect speech (was 0.05)
-  static const int _maxVadErrors = 3;
-  static const int _maxRecordingTicks = 75; // ~15 seconds max recording
+  // VAD tuning
+  static const int _silenceThreshold = 4; // ~0.8 seconds of silence
+  static const double _speechThreshold = 0.075; // Speech detection threshold
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -486,113 +479,44 @@ class ConversationManager {
     if (!_isRunning || _isProcessing || _isRealtimeMode()) return;
 
     _updateState(ConversationState.listening);
-
-    // Reset all VAD state
     _hasDetectedSpeech = false;
     _silenceCount = 0;
-    _speechDuration = 0;
-    _totalRecordingTicks = 0;
-    _vadCheckInProgress = false;
-    _vadErrorCount = 0;
 
-    _recordingService
-        .startRecording()
-        .then((path) {
-          if (path == null) {
-            debugPrint('VAD ERROR: Failed to start recording - path is null');
-            onError?.call('Failed to start recording');
-            return;
-          }
+    _recordingService.startRecording().then((path) {
+      if (path == null) {
+        onError?.call('Failed to start recording');
+        return;
+      }
 
-          debugPrint(
-            'VAD: Recording started at $path - timer starting (max ${_maxRecordingTicks * 200}ms)',
-          );
+      debugPrint('Recording started, monitoring for speech...');
 
-          _vadTimer?.cancel();
-          _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (
-            timer,
-          ) {
-            if (_vadCheckInProgress) {
-              debugPrint('VAD: Skipping tick - check in progress');
-              return;
-            }
-            _checkVoiceActivity();
-          });
-          debugPrint('VAD: Timer started successfully');
-        })
-        .catchError((e) {
-          debugPrint('VAD ERROR: startRecording threw exception: $e');
-          onError?.call('Failed to start recording: $e');
-        });
+      _vadTimer?.cancel();
+      _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+        _checkVoiceActivity();
+      });
+    });
   }
 
-  /// Check voice activity based on amplitude - simple fixed threshold approach
+  /// Check voice activity based on amplitude
   Future<void> _checkVoiceActivity() async {
-    _vadCheckInProgress = true;
+    if (!_isRunning || _isProcessing) {
+      _vadTimer?.cancel();
+      return;
+    }
 
-    try {
-      if (!_isRunning || _isProcessing) {
-        _vadTimer?.cancel();
-        return;
-      }
+    final amplitude = await _recordingService.getAmplitude();
 
-      _totalRecordingTicks++;
+    if (amplitude > _speechThreshold) {
+      _hasDetectedSpeech = true;
+      _silenceCount = 0;
+    } else if (_hasDetectedSpeech) {
+      _silenceCount++;
 
-      // SAFETY: Max recording time reached - process whatever we have
-      if (_totalRecordingTicks >= _maxRecordingTicks) {
-        debugPrint('VAD: Max recording time reached, processing...');
+      if (_silenceCount >= _silenceThreshold) {
+        debugPrint('Speech ended, processing...');
         _vadTimer?.cancel();
         await _processRecording();
-        return;
       }
-
-      final amplitude = await _recordingService.getAmplitude();
-
-      // Check for error signal (-1.0)
-      if (amplitude < 0) {
-        _vadErrorCount++;
-        if (_vadErrorCount >= _maxVadErrors) {
-          debugPrint('VAD: Too many errors, processing anyway...');
-          _vadTimer?.cancel();
-          if (_hasDetectedSpeech) {
-            await _processRecording();
-          } else {
-            if (_isRunning) _startListening();
-          }
-        }
-        return;
-      }
-      _vadErrorCount = 0;
-
-      // Log every tick to debug
-      debugPrint(
-        'VAD[$_totalRecordingTicks]: amp=${amplitude.toStringAsFixed(3)} threshold=$_speechThreshold speech=$_hasDetectedSpeech silence=$_silenceCount',
-      );
-
-      // Simple fixed threshold logic - works reliably
-      if (amplitude > _speechThreshold) {
-        // Speech detected
-        if (!_hasDetectedSpeech) {
-          debugPrint('VAD: *** SPEECH STARTED ***');
-        }
-        _hasDetectedSpeech = true;
-        _speechDuration++;
-        _silenceCount = 0;
-      } else if (_hasDetectedSpeech) {
-        // Was speaking, now quiet
-        _silenceCount++;
-        debugPrint('VAD: Silence count: $_silenceCount / $_silenceThreshold');
-
-        // Process after enough silence
-        if (_silenceCount >= _silenceThreshold) {
-          debugPrint('VAD: *** SILENCE DETECTED - PROCESSING ***');
-          _vadTimer?.cancel();
-          await _processRecording();
-          return;
-        }
-      }
-    } finally {
-      _vadCheckInProgress = false;
     }
   }
 
