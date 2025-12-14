@@ -55,8 +55,7 @@ class ConversationManager {
   static const double _speechThreshold =
       0.02; // Very low threshold to detect speech (was 0.05)
   static const int _maxVadErrors = 3;
-  static const int _maxRecordingTicks =
-      75; // ~15 seconds max recording
+  static const int _maxRecordingTicks = 75; // ~15 seconds max recording
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -496,30 +495,35 @@ class ConversationManager {
     _vadCheckInProgress = false;
     _vadErrorCount = 0;
 
-    _recordingService.startRecording().then((path) {
-      if (path == null) {
-        debugPrint('VAD ERROR: Failed to start recording - path is null');
-        onError?.call('Failed to start recording');
-        return;
-      }
+    _recordingService
+        .startRecording()
+        .then((path) {
+          if (path == null) {
+            debugPrint('VAD ERROR: Failed to start recording - path is null');
+            onError?.call('Failed to start recording');
+            return;
+          }
 
-      debugPrint(
-        'VAD: Recording started at $path - timer starting (max ${_maxRecordingTicks * 200}ms)',
-      );
+          debugPrint(
+            'VAD: Recording started at $path - timer starting (max ${_maxRecordingTicks * 200}ms)',
+          );
 
-      _vadTimer?.cancel();
-      _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
-        if (_vadCheckInProgress) {
-          debugPrint('VAD: Skipping tick - check in progress');
-          return;
-        }
-        _checkVoiceActivity();
-      });
-      debugPrint('VAD: Timer started successfully');
-    }).catchError((e) {
-      debugPrint('VAD ERROR: startRecording threw exception: $e');
-      onError?.call('Failed to start recording: $e');
-    });
+          _vadTimer?.cancel();
+          _vadTimer = Timer.periodic(const Duration(milliseconds: 200), (
+            timer,
+          ) {
+            if (_vadCheckInProgress) {
+              debugPrint('VAD: Skipping tick - check in progress');
+              return;
+            }
+            _checkVoiceActivity();
+          });
+          debugPrint('VAD: Timer started successfully');
+        })
+        .catchError((e) {
+          debugPrint('VAD ERROR: startRecording threw exception: $e');
+          onError?.call('Failed to start recording: $e');
+        });
   }
 
   /// Check voice activity based on amplitude - simple fixed threshold approach
@@ -560,13 +564,16 @@ class ConversationManager {
       }
       _vadErrorCount = 0;
 
+      // Log every tick to debug
+      debugPrint(
+        'VAD[$_totalRecordingTicks]: amp=${amplitude.toStringAsFixed(3)} threshold=$_speechThreshold speech=$_hasDetectedSpeech silence=$_silenceCount',
+      );
+
       // Simple fixed threshold logic - works reliably
       if (amplitude > _speechThreshold) {
         // Speech detected
         if (!_hasDetectedSpeech) {
-          debugPrint(
-            'VAD: Speech started! (amp=${amplitude.toStringAsFixed(3)})',
-          );
+          debugPrint('VAD: *** SPEECH STARTED ***');
         }
         _hasDetectedSpeech = true;
         _speechDuration++;
@@ -574,23 +581,15 @@ class ConversationManager {
       } else if (_hasDetectedSpeech) {
         // Was speaking, now quiet
         _silenceCount++;
+        debugPrint('VAD: Silence count: $_silenceCount / $_silenceThreshold');
 
         // Process after enough silence
         if (_silenceCount >= _silenceThreshold) {
-          debugPrint(
-            'VAD: Speech ended after ${_speechDuration * 200}ms, silence=${_silenceCount * 200}ms, processing...',
-          );
+          debugPrint('VAD: *** SILENCE DETECTED - PROCESSING ***');
           _vadTimer?.cancel();
           await _processRecording();
           return;
         }
-      }
-
-      // Debug every 5 ticks (1 second)
-      if (_totalRecordingTicks % 5 == 0) {
-        debugPrint(
-          'VAD: tick=$_totalRecordingTicks amp=${amplitude.toStringAsFixed(3)} speech=$_hasDetectedSpeech dur=$_speechDuration silence=$_silenceCount',
-        );
       }
     } finally {
       _vadCheckInProgress = false;

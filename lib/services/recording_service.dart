@@ -228,7 +228,10 @@ class RecordingService {
   /// Get the current amplitude (for visualization)
   /// Returns normalized amplitude 0.0-1.0, or -1.0 on timeout/error
   Future<double> getAmplitude() async {
-    if (!_isRecording) return 0.0;
+    if (!_isRecording) {
+      debugPrint('getAmplitude: NOT RECORDING - returning 0.0');
+      return 0.0;
+    }
 
     try {
       // Add timeout to prevent hanging - record package can hang on some devices
