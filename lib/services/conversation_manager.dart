@@ -144,7 +144,7 @@ class ConversationManager {
 
   void _startPocketModeKeepAlive() {
     _pocketModeTimer?.cancel();
-    _pocketModeTimer = Timer.periodic(const Duration(seconds: 5), (
+    _pocketModeTimer = Timer.periodic(const Duration(seconds: 3), (
       timer,
     ) async {
       if (!_isRunning || !_isScreenOff) {
@@ -154,9 +154,27 @@ class ConversationManager {
 
       debugPrint('POCKET MODE: Keep-alive check');
 
-      // For realtime modes, check if streaming is alive
-      if (_isRealtimeMode() && !_isSpeaking) {
-        if (!_recordingService.isStreaming) {
+      // For realtime modes, check if connection and streaming are alive
+      if (_isRealtimeMode()) {
+        // Check if WebSocket connection died
+        if (appState.selectedProvider == AiProvider.gemini) {
+          if (!_geminiLiveService.isConnected) {
+            debugPrint('POCKET MODE: Gemini connection died, reconnecting...');
+            await _geminiLiveService.connect();
+            await _startAudioStreaming();
+            return;
+          }
+        } else if (appState.selectedProvider == AiProvider.openai) {
+          if (!_openaiRealtimeService.isConnected) {
+            debugPrint('POCKET MODE: OpenAI connection died, reconnecting...');
+            await _openaiRealtimeService.connect();
+            await _startAudioStreaming();
+            return;
+          }
+        }
+
+        // Check if audio streaming died
+        if (!_isSpeaking && !_recordingService.isStreaming) {
           debugPrint('POCKET MODE: Audio streaming died, restarting...');
           await _startAudioStreaming();
         }
