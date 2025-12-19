@@ -131,6 +131,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     await _conversationManager.stopConversation();
   }
 
+  void _clearChat() {
+    setState(() {
+      _transcriptEntries.clear();
+    });
+  }
+
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -176,6 +182,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       appBar: AppBar(
         title: const Text('Tangential'),
         actions: [
+          // Clear chat button - only show when there are messages
+          if (_transcriptEntries.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Clear Chat',
+              onPressed: _clearChat,
+            ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'History',
