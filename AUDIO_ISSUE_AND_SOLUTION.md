@@ -313,13 +313,42 @@ In `lib/services/conversation_manager.dart`, replace `_recordingService.startStr
 
 ---
 
+## IMPORTANT: Implement As Optional Toggle
+
+**Do NOT replace the existing audio capture. Make this an OPTIONAL feature.**
+
+### Implementation Requirement
+
+1. Add a setting in `lib/screens/settings_screen.dart`:
+   - **"Use Native Audio (Experimental)"** - Toggle switch
+   - Default: **OFF**
+   - Description: "Enable hardware noise suppression for noisy environments. May improve outdoor performance."
+
+2. In `lib/providers/app_state.dart`:
+   - Add `bool _useNativeAudio = false;`
+   - Add getter/setter with `notifyListeners()`
+
+3. In `lib/services/conversation_manager.dart`:
+   - Check `appState.useNativeAudio` before starting audio
+   - If OFF → use existing `_recordingService.startStreaming()` (current behavior)
+   - If ON → use new `_nativeAudioService.startStreaming()`
+
+### Why Toggle Is Critical
+
+- Current audio works indoors - don't break it
+- Native audio is untested - might have issues
+- User can switch back instantly if problems occur
+- Allows A/B comparison
+
+---
+
 ## Risks
 
 | Risk | Mitigation |
 |------|------------|
 | Audio format mismatch | Use same PCM16 format, same sample rates |
 | Platform channel errors | Add proper error handling and fallback |
-| Breaks existing functionality | Keep `record` package as fallback option |
+| Breaks existing functionality | **Toggle OFF by default**, user enables manually |
 | iOS not supported | This solution is Android-only; iOS would need separate implementation |
 
 ---
