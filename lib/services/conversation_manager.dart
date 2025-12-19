@@ -342,7 +342,7 @@ class ConversationManager {
     // Set voices
     _geminiLiveService.setVoice(appState.geminiLiveVoice);
     _openaiRealtimeService.setVoice(appState.openaiRealtimeVoice);
-    
+
     // Configure OpenAI TTS for standard modes
     if (appState.openaiApiKey != null) {
       _openaiTtsService.setApiKey(appState.openaiApiKey!);
