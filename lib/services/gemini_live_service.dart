@@ -28,11 +28,17 @@ class GeminiLiveService {
   VoidCallback? onInterrupted;
   VoidCallback? onTurnComplete;
 
+  String _voice = 'Kore';
+
   bool get isConnected => _isConnected && _setupComplete;
   bool get isListening => _isListening;
 
   void setApiKey(String apiKey) {
     _apiKey = apiKey;
+  }
+
+  void setVoice(String voice) {
+    _voice = voice;
   }
 
   /// Connect to Gemini Live API
@@ -145,7 +151,7 @@ class GeminiLiveService {
           'maxOutputTokens': 8192,
           'speechConfig': {
             'voiceConfig': {
-              'prebuiltVoiceConfig': {'voiceName': 'Kore'},
+              'prebuiltVoiceConfig': {'voiceName': _voice},
             },
           },
         },

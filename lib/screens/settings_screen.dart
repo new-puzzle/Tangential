@@ -284,25 +284,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Gemini Live Voice
             const Text(
-              'TTS Voice Selection',
+              'Gemini Live Voice',
               style: TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Using device default voice. More options coming soon.',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+            DropdownButton<String>(
+              value: appState.geminiLiveVoice,
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'Kore', child: Text('Kore (Female)')),
+                DropdownMenuItem(value: 'Puck', child: Text('Puck (Male)')),
+                DropdownMenuItem(value: 'Charon', child: Text('Charon (Male)')),
+                DropdownMenuItem(value: 'Fenrir', child: Text('Fenrir (Male)')),
+                DropdownMenuItem(value: 'Aoede', child: Text('Aoede (Female)')),
+              ],
+              onChanged: (value) {
+                if (value != null) appState.setGeminiLiveVoice(value);
+              },
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Open TTS settings or implement voice picker
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Voice selection coming soon')),
-                );
+            // OpenAI Realtime Voice
+            const Text(
+              'OpenAI Realtime Voice',
+              style: TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 8),
+            DropdownButton<String>(
+              value: appState.openaiRealtimeVoice,
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'alloy', child: Text('Alloy (Neutral)')),
+                DropdownMenuItem(value: 'echo', child: Text('Echo (Male)')),
+                DropdownMenuItem(value: 'fable', child: Text('Fable (British)')),
+                DropdownMenuItem(value: 'onyx', child: Text('Onyx (Deep Male)')),
+                DropdownMenuItem(value: 'nova', child: Text('Nova (Female)')),
+                DropdownMenuItem(value: 'shimmer', child: Text('Shimmer (Female)')),
+              ],
+              onChanged: (value) {
+                if (value != null) appState.setOpenaiRealtimeVoice(value);
               },
-              icon: const Icon(Icons.record_voice_over),
-              label: const Text('Select Voice'),
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            const Text(
+              'Standard Mode Voice (DeepSeek, Mistral)',
+              style: TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Uses your device TTS. Change in phone Settings > Text-to-Speech.',
+              style: TextStyle(color: Colors.white54, fontSize: 12),
             ),
           ],
         ),

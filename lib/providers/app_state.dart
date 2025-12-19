@@ -51,6 +51,10 @@ class AppState extends ChangeNotifier {
   int _audioRetentionDays = 30;
   bool _textOnlyMode = false; // Skip TTS, show text only
 
+  // Voice settings
+  String _geminiLiveVoice = 'Kore';
+  String _openaiRealtimeVoice = 'alloy';
+
   // Getters
   AiProvider get selectedProvider => _selectedProvider;
   AiMode get currentMode => _providerModes[_selectedProvider]!;
@@ -66,6 +70,8 @@ class AppState extends ChangeNotifier {
   bool get wakeWordEnabled => _wakeWordEnabled;
   int get audioRetentionDays => _audioRetentionDays;
   bool get textOnlyMode => _textOnlyMode;
+  String get geminiLiveVoice => _geminiLiveVoice;
+  String get openaiRealtimeVoice => _openaiRealtimeVoice;
 
   // API Key getters
   String? get geminiApiKey => _geminiApiKey;
@@ -169,6 +175,16 @@ class AppState extends ChangeNotifier {
 
   void setTextOnlyMode(bool enabled) {
     _textOnlyMode = enabled;
+    notifyListeners();
+  }
+
+  void setGeminiLiveVoice(String voice) {
+    _geminiLiveVoice = voice;
+    notifyListeners();
+  }
+
+  void setOpenaiRealtimeVoice(String voice) {
+    _openaiRealtimeVoice = voice;
     notifyListeners();
   }
 

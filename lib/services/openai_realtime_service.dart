@@ -25,10 +25,16 @@ class OpenAiRealtimeService {
   Function(String)? onError;
   VoidCallback? onAiDone;
 
+  String _voice = 'alloy';
+
   bool get isConnected => _isConnected && _sessionConfigured;
 
   void setApiKey(String apiKey) {
     _apiKey = apiKey;
+  }
+
+  void setVoice(String voice) {
+    _voice = voice;
   }
 
   /// Connect to OpenAI Realtime API
@@ -139,7 +145,7 @@ class OpenAiRealtimeService {
       'session': {
         'modalities': ['text', 'audio'],
         'instructions': tangentialSystemPrompt,
-        'voice': 'alloy',
+        'voice': _voice,
         'input_audio_format': 'pcm16',
         'output_audio_format': 'pcm16',
         'input_audio_transcription': {'model': 'whisper-1'},

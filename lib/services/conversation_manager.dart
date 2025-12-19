@@ -323,6 +323,9 @@ class ConversationManager {
     if (appState.mistralApiKey != null) {
       _mistralService.setApiKey(appState.mistralApiKey!);
     }
+    // Set voices
+    _geminiLiveService.setVoice(appState.geminiLiveVoice);
+    _openaiRealtimeService.setVoice(appState.openaiRealtimeVoice);
   }
 
   /// Check if using realtime mode (native bidirectional audio)
