@@ -54,6 +54,8 @@ class AppState extends ChangeNotifier {
   // Voice settings
   String _geminiLiveVoice = 'Kore';
   String _openaiRealtimeVoice = 'alloy';
+  String _standardModeVoice = 'nova'; // OpenAI TTS voice for DeepSeek/Mistral
+  bool _useOpenaiTts = true; // Use OpenAI TTS instead of device TTS
 
   // Getters
   AiProvider get selectedProvider => _selectedProvider;
@@ -72,6 +74,8 @@ class AppState extends ChangeNotifier {
   bool get textOnlyMode => _textOnlyMode;
   String get geminiLiveVoice => _geminiLiveVoice;
   String get openaiRealtimeVoice => _openaiRealtimeVoice;
+  String get standardModeVoice => _standardModeVoice;
+  bool get useOpenaiTts => _useOpenaiTts;
 
   // API Key getters
   String? get geminiApiKey => _geminiApiKey;
@@ -185,6 +189,16 @@ class AppState extends ChangeNotifier {
 
   void setOpenaiRealtimeVoice(String voice) {
     _openaiRealtimeVoice = voice;
+    notifyListeners();
+  }
+
+  void setStandardModeVoice(String voice) {
+    _standardModeVoice = voice;
+    notifyListeners();
+  }
+
+  void setUseOpenaiTts(bool use) {
+    _useOpenaiTts = use;
     notifyListeners();
   }
 

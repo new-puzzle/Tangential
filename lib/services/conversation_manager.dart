@@ -8,6 +8,7 @@ import 'background_service.dart';
 import 'pcm_audio_player.dart';
 import 'recording_service.dart';
 import 'tts_service.dart';
+import 'openai_tts_service.dart';
 import 'whisper_service.dart';
 import 'gemini_flash_service.dart';
 import 'gemini_live_service.dart';
@@ -26,6 +27,7 @@ class ConversationManager {
   // Core services
   late RecordingService _recordingService;
   late TtsService _ttsService;
+  late OpenaiTtsService _openaiTtsService;
   late WhisperService _whisperService;
   late PcmAudioPlayer _pcmAudioPlayer;
 
@@ -75,6 +77,7 @@ class ConversationManager {
   void _initializeServices() {
     _recordingService = RecordingService();
     _ttsService = TtsService();
+    _openaiTtsService = OpenaiTtsService();
     _whisperService = WhisperService();
     _pcmAudioPlayer = PcmAudioPlayer();
 
@@ -91,6 +94,19 @@ class ConversationManager {
     };
 
     _ttsService.onComplete = () {
+      _isSpeaking = false;
+      if (_isRunning && !_isProcessing && !_isRealtimeMode()) {
+        _startListening();
+      }
+    };
+
+    // OpenAI TTS callbacks
+    _openaiTtsService.onStart = () {
+      _isSpeaking = true;
+      _updateState(ConversationState.speaking);
+    };
+
+    _openaiTtsService.onComplete = () {
       _isSpeaking = false;
       if (_isRunning && !_isProcessing && !_isRealtimeMode()) {
         _startListening();
@@ -326,6 +342,12 @@ class ConversationManager {
     // Set voices
     _geminiLiveService.setVoice(appState.geminiLiveVoice);
     _openaiRealtimeService.setVoice(appState.openaiRealtimeVoice);
+    
+    // Configure OpenAI TTS for standard modes
+    if (appState.openaiApiKey != null) {
+      _openaiTtsService.setApiKey(appState.openaiApiKey!);
+    }
+    _openaiTtsService.setVoice(appState.standardModeVoice);
   }
 
   /// Check if using realtime mode (native bidirectional audio)
@@ -723,7 +745,12 @@ class ConversationManager {
       onAiResponse?.call(response);
 
       if (!appState.textOnlyMode) {
-        await _ttsService.speak(response);
+        // Use OpenAI TTS if enabled, otherwise device TTS
+        if (appState.useOpenaiTts && appState.openaiApiKey != null) {
+          await _openaiTtsService.speak(response);
+        } else {
+          await _ttsService.speak(response);
+        }
       } else {
         if (_isRunning) _startListening();
       }
@@ -748,6 +775,7 @@ class ConversationManager {
     await _stopAudioStreaming();
     await _recordingService.stopRecording();
     await _ttsService.stop();
+    await _openaiTtsService.stop();
     await _pcmAudioPlayer.stop();
 
     // Only disconnect the service that was actually used
@@ -787,6 +815,7 @@ class ConversationManager {
 
       if (_isSpeaking) {
         _ttsService.stop();
+        _openaiTtsService.stop();
         _isSpeaking = false;
       }
 
@@ -803,7 +832,8 @@ class ConversationManager {
     if (!_isRunning) return;
     _vadTimer?.cancel();
     await _recordingService.stopRecording();
-    await _ttsService.pause();
+    await _ttsService.stop();
+    await _openaiTtsService.stop();
     _updateState(ConversationState.sleeping);
   }
 
@@ -826,6 +856,7 @@ class ConversationManager {
       }
     } else {
       _ttsService.stop();
+      _openaiTtsService.stop();
       _isSpeaking = false;
       if (_isRunning) _startListening();
     }

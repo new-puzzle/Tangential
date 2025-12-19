@@ -331,15 +331,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
+            // Standard Mode Voice (DeepSeek, Mistral)
             const Text(
               'Standard Mode Voice (DeepSeek, Mistral)',
               style: TextStyle(color: Colors.white),
             ),
-            const SizedBox(height: 4),
-            const Text(
-              'Uses your device TTS. Change in phone Settings > Text-to-Speech.',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Use OpenAI TTS'),
+              subtitle: const Text('High quality voices (requires OpenAI key)'),
+              value: appState.useOpenaiTts,
+              onChanged: appState.setUseOpenaiTts,
+              contentPadding: EdgeInsets.zero,
             ),
+            if (appState.useOpenaiTts) ...[
+              const SizedBox(height: 8),
+              DropdownButton<String>(
+                value: appState.standardModeVoice,
+                dropdownColor: Theme.of(context).colorScheme.surface,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(value: 'nova', child: Text('Nova (Female, Warm)')),
+                  DropdownMenuItem(value: 'shimmer', child: Text('Shimmer (Female, Clear)')),
+                  DropdownMenuItem(value: 'alloy', child: Text('Alloy (Neutral)')),
+                  DropdownMenuItem(value: 'echo', child: Text('Echo (Male)')),
+                  DropdownMenuItem(value: 'fable', child: Text('Fable (British)')),
+                  DropdownMenuItem(value: 'onyx', child: Text('Onyx (Deep Male)')),
+                ],
+                onChanged: (value) {
+                  if (value != null) appState.setStandardModeVoice(value);
+                },
+              ),
+            ] else ...[
+              const SizedBox(height: 4),
+              const Text(
+                'Using device TTS. Change in phone Settings > Text-to-Speech.',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ],
           ],
         ),
       ),
