@@ -117,6 +117,108 @@ class ConversationManager {
     };
 
     _setupRealtimeCallbacks();
+    _setupBackgroundCallbacks();
+  }
+
+  // Timer to keep mic streaming alive during screen off
+  Timer? _screenOffKeepAliveTimer;
+  bool _screenIsOff = false;
+
+  /// Setup callbacks for screen on/off events - CRITICAL for pocket mode
+  void _setupBackgroundCallbacks() {
+    BackgroundService.onScreenOff = () {
+      debugPrint('POCKET MODE: Screen OFF - starting keep-alive');
+      _screenIsOff = true;
+      
+      if (_isRunning && _isRealtimeMode()) {
+        // Start a timer to periodically restart mic streaming
+        // Android kills audio resources when screen is off
+        _startScreenOffKeepAlive();
+      }
+    };
+
+    BackgroundService.onScreenOn = () {
+      debugPrint('POCKET MODE: Screen ON - stopping keep-alive timer');
+      _screenIsOff = false;
+      _stopScreenOffKeepAlive();
+      
+      if (_isRunning) {
+        debugPrint('POCKET MODE: Conversation active, ensuring mic streaming');
+        if (_isRealtimeMode()) {
+          // Restart mic streaming immediately
+          _startAudioStreaming();
+          
+          // Check if WebSocket is still connected, reconnect if needed
+          _checkAndReconnect();
+        } else {
+          // For standard mode, restart VAD listening if not speaking
+          if (!_isSpeaking && !_isProcessing) {
+            _startListening();
+          }
+        }
+      }
+    };
+    
+    debugPrint('BACKGROUND: Screen callbacks configured');
+  }
+
+  /// Keep mic streaming alive while screen is off
+  void _startScreenOffKeepAlive() {
+    _stopScreenOffKeepAlive();
+    
+    // Every 5 seconds, try to restart mic streaming if it died
+    _screenOffKeepAliveTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (!_isRunning || !_screenIsOff) {
+        timer.cancel();
+        return;
+      }
+      
+      debugPrint('POCKET MODE: Keep-alive tick - checking mic stream');
+      
+      // Check if recording service is still streaming
+      if (!_recordingService.isStreaming) {
+        debugPrint('POCKET MODE: Mic stream died, restarting...');
+        await _startAudioStreaming();
+      }
+      
+      // Also check WebSocket connection
+      await _checkAndReconnect();
+    });
+  }
+
+  void _stopScreenOffKeepAlive() {
+    _screenOffKeepAliveTimer?.cancel();
+    _screenOffKeepAliveTimer = null;
+  }
+
+  /// Check if WebSocket is still connected and reconnect if needed
+  Future<void> _checkAndReconnect() async {
+    if (!_isRunning || !_isRealtimeMode()) return;
+    
+    bool needsReconnect = false;
+    
+    if (appState.selectedProvider == AiProvider.gemini) {
+      if (!_geminiLiveService.isConnected) {
+        debugPrint('POCKET MODE: Gemini Live disconnected, reconnecting...');
+        needsReconnect = true;
+      }
+    } else if (appState.selectedProvider == AiProvider.openai) {
+      if (!_openaiRealtimeService.isConnected) {
+        debugPrint('POCKET MODE: OpenAI Realtime disconnected, reconnecting...');
+        needsReconnect = true;
+      }
+    }
+    
+    if (needsReconnect) {
+      // Try to reconnect
+      final success = await _startRealtimeSession();
+      if (success) {
+        debugPrint('POCKET MODE: Reconnected successfully!');
+      } else {
+        debugPrint('POCKET MODE: Reconnection failed');
+        onError?.call('Connection lost. Please tap to reconnect.');
+      }
+    }
   }
 
   void _setupRealtimeCallbacks() {
@@ -627,8 +729,10 @@ class ConversationManager {
     _isRunning = false;
     _isProcessing = false;
     _isSpeaking = false;
+    _screenIsOff = false;
 
     _vadTimer?.cancel();
+    _stopScreenOffKeepAlive(); // Stop the pocket mode keep-alive
 
     // Stop both streaming and recording
     await _stopAudioStreaming();
@@ -754,6 +858,7 @@ class ConversationManager {
   }
 
   Future<void> dispose() async {
+    _stopScreenOffKeepAlive();
     await stopConversation();
     await _recordingService.dispose();
     await _ttsService.dispose();
