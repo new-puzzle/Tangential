@@ -317,6 +317,14 @@ In `lib/services/conversation_manager.dart`, replace `_recordingService.startStr
 
 **Do NOT replace the existing audio capture. Make this an OPTIONAL feature.**
 
+### ⚠️ CRITICAL: Do Not Modify Existing Code
+
+- **DO NOT** change `lib/services/recording_service.dart` - leave it exactly as is
+- **DO NOT** remove or modify any existing audio code
+- **ONLY ADD** new files alongside existing ones
+- When toggle is OFF, app must behave **exactly as it does today** - same code paths, same behavior
+- The new native audio is **purely additive** - it's a second option, not a replacement
+
 ### Implementation Requirement
 
 1. Add a setting in `lib/screens/settings_screen.dart`:
