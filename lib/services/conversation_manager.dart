@@ -129,7 +129,7 @@ class ConversationManager {
     BackgroundService.onScreenOff = () {
       debugPrint('POCKET MODE: Screen OFF - starting keep-alive');
       _screenIsOff = true;
-      
+
       if (_isRunning && _isRealtimeMode()) {
         // Start a timer to periodically restart mic streaming
         // Android kills audio resources when screen is off
@@ -141,13 +141,13 @@ class ConversationManager {
       debugPrint('POCKET MODE: Screen ON - stopping keep-alive timer');
       _screenIsOff = false;
       _stopScreenOffKeepAlive();
-      
+
       if (_isRunning) {
         debugPrint('POCKET MODE: Conversation active, ensuring mic streaming');
         if (_isRealtimeMode()) {
           // Restart mic streaming immediately
           _startAudioStreaming();
-          
+
           // Check if WebSocket is still connected, reconnect if needed
           _checkAndReconnect();
         } else {
@@ -158,29 +158,31 @@ class ConversationManager {
         }
       }
     };
-    
+
     debugPrint('BACKGROUND: Screen callbacks configured');
   }
 
   /// Keep mic streaming alive while screen is off
   void _startScreenOffKeepAlive() {
     _stopScreenOffKeepAlive();
-    
+
     // Every 5 seconds, try to restart mic streaming if it died
-    _screenOffKeepAliveTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+    _screenOffKeepAliveTimer = Timer.periodic(const Duration(seconds: 5), (
+      timer,
+    ) async {
       if (!_isRunning || !_screenIsOff) {
         timer.cancel();
         return;
       }
-      
+
       debugPrint('POCKET MODE: Keep-alive tick - checking mic stream');
-      
+
       // Check if recording service is still streaming
       if (!_recordingService.isStreaming) {
         debugPrint('POCKET MODE: Mic stream died, restarting...');
         await _startAudioStreaming();
       }
-      
+
       // Also check WebSocket connection
       await _checkAndReconnect();
     });
@@ -194,9 +196,9 @@ class ConversationManager {
   /// Check if WebSocket is still connected and reconnect if needed
   Future<void> _checkAndReconnect() async {
     if (!_isRunning || !_isRealtimeMode()) return;
-    
+
     bool needsReconnect = false;
-    
+
     if (appState.selectedProvider == AiProvider.gemini) {
       if (!_geminiLiveService.isConnected) {
         debugPrint('POCKET MODE: Gemini Live disconnected, reconnecting...');
@@ -204,11 +206,13 @@ class ConversationManager {
       }
     } else if (appState.selectedProvider == AiProvider.openai) {
       if (!_openaiRealtimeService.isConnected) {
-        debugPrint('POCKET MODE: OpenAI Realtime disconnected, reconnecting...');
+        debugPrint(
+          'POCKET MODE: OpenAI Realtime disconnected, reconnecting...',
+        );
         needsReconnect = true;
       }
     }
-    
+
     if (needsReconnect) {
       // Try to reconnect
       final success = await _startRealtimeSession();
@@ -568,10 +572,13 @@ class ConversationManager {
       );
 
       // Silence threshold: dropped to near noise floor level
+      // Ensure min <= max for clamp to work correctly
+      final minSilence = _recentAvgAmplitude * 1.1;
+      final maxSilence = _peakAmplitude * 0.5;
       final silenceThreshold = _hasDetectedSpeech
           ? (_peakAmplitude * 0.3).clamp(
-              _recentAvgAmplitude * 1.1,
-              _peakAmplitude * 0.5,
+              minSilence < maxSilence ? minSilence : maxSilence,
+              minSilence < maxSilence ? maxSilence : minSilence,
             )
           : _speechStartThreshold;
 
