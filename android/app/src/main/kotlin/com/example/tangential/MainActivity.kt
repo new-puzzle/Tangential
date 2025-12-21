@@ -73,11 +73,39 @@ class MainActivity : FlutterFragmentActivity() {
                                 action = AudioForegroundService.ACTION_STOP_RECORDING
                             }
                             startService(intent)
-                            
+
                             Log.d(TAG, "Stopped AudioForegroundService")
                             result.success(true)
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to stop foreground service: ${e.message}")
+                            result.success(false)
+                        }
+                    }
+                    "pauseAudioStream" -> {
+                        try {
+                            val intent = Intent(this, AudioForegroundService::class.java).apply {
+                                action = AudioForegroundService.ACTION_PAUSE_RECORDING
+                            }
+                            startService(intent)
+
+                            Log.d(TAG, "Paused AudioForegroundService")
+                            result.success(true)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to pause foreground service: ${e.message}")
+                            result.success(false)
+                        }
+                    }
+                    "resumeAudioStream" -> {
+                        try {
+                            val intent = Intent(this, AudioForegroundService::class.java).apply {
+                                action = AudioForegroundService.ACTION_RESUME_RECORDING
+                            }
+                            startService(intent)
+
+                            Log.d(TAG, "Resumed AudioForegroundService")
+                            result.success(true)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to resume foreground service: ${e.message}")
                             result.success(false)
                         }
                     }

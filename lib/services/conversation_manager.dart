@@ -121,9 +121,13 @@ class ConversationManager {
 
     // PCM audio player callbacks for realtime modes
     _pcmAudioPlayer.onPlaybackStarted = () {
-      debugPrint('PCM: Playback started - AI is speaking');
+      debugPrint('PCM: Playback started - AI is speaking, pausing mic');
       _isSpeaking = true;
       _updateState(ConversationState.speaking);
+      // Pause mic streaming while AI speaks (keeps foreground service alive)
+      if (_isRealtimeMode()) {
+        _nativeAudioService.pauseStreaming();
+      }
     };
 
     _pcmAudioPlayer.onPlaybackComplete = () {
@@ -131,15 +135,16 @@ class ConversationManager {
       _isSpeaking = false;
       if (_isRunning && _isRealtimeMode()) {
         _updateState(ConversationState.listening);
-        
-        // CRITICAL: Wait for bluetooth to switch modes before restarting mic
+
+        // CRITICAL: Wait for bluetooth to switch modes before resuming mic
         // Bluetooth typically takes 200-400ms to switch from A2DP (music) to SCO (voice)
         // 500ms ensures the switch is complete
-        debugPrint('RESTART: Waiting 500ms for bluetooth mode switch...');
+        debugPrint('RESUME: Waiting 500ms for bluetooth mode switch...');
         Future.delayed(const Duration(milliseconds: 500), () {
           if (_isRunning && _isRealtimeMode()) {
-            debugPrint('RESTART: Re-starting mic streaming after delay');
-            _startAudioStreaming();
+            debugPrint('RESUME: Resuming mic streaming after delay');
+            // Resume instead of restart - keeps foreground service alive
+            _nativeAudioService.resumeStreaming();
           }
         });
       }
@@ -165,7 +170,10 @@ class ConversationManager {
     _geminiLiveService.onInterrupted = () {
       debugPrint('Gemini Live: User interrupted');
       _pcmAudioPlayer.stop();
+      _isSpeaking = false;
       _updateState(ConversationState.listening);
+      // Resume mic after interrupt (was paused during AI speech)
+      _nativeAudioService.resumeStreaming();
     };
     _geminiLiveService.onTurnComplete = () {
       debugPrint('Gemini Live: Turn complete - audio done');

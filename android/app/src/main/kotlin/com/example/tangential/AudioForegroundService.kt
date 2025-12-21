@@ -22,9 +22,11 @@ class AudioForegroundService : Service() {
         const val CHANNEL_ID = "tangential_audio"
         const val ACTION_START_RECORDING = "START_RECORDING"
         const val ACTION_STOP_RECORDING = "STOP_RECORDING"
+        const val ACTION_PAUSE_RECORDING = "PAUSE_RECORDING"
+        const val ACTION_RESUME_RECORDING = "RESUME_RECORDING"
         const val EXTRA_SAMPLE_RATE = "sampleRate"
         private const val TAG = "AudioForegroundService"
-        
+
         // Static reference for EventChannel communication
         var eventSink: EventChannel.EventSink? = null
     }
@@ -36,6 +38,7 @@ class AudioForegroundService : Service() {
     
     private var recordingThread: Thread? = null
     private var isRecording = false
+    private var isPaused = false
     private var pendingSampleRate = 16000
     
     // Bluetooth state tracking
@@ -83,11 +86,26 @@ class AudioForegroundService : Service() {
             ACTION_START_RECORDING -> {
                 val sampleRate = intent.getIntExtra(EXTRA_SAMPLE_RATE, 16000)
                 pendingSampleRate = sampleRate
-                startRecording(sampleRate)
+                // If already recording but paused, just resume
+                if (isRecording && isPaused) {
+                    resumeRecording()
+                } else if (!isRecording) {
+                    startRecording(sampleRate)
+                } else {
+                    Log.d(TAG, "Already recording at ${pendingSampleRate}Hz")
+                }
             }
             ACTION_STOP_RECORDING -> {
+                // Fully stop and destroy the service
                 stopRecording()
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
+            }
+            ACTION_PAUSE_RECORDING -> {
+                pauseRecording()
+            }
+            ACTION_RESUME_RECORDING -> {
+                resumeRecording()
             }
         }
         return START_STICKY  // Restart if killed
@@ -236,18 +254,22 @@ class AudioForegroundService : Service() {
                 
                 val buffer = ByteArray(bufferSize)
                 var chunksProcessed = 0
-                
+
                 while (isRecording) {
                     val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
                     if (read > 0) {
-                        chunksProcessed++
-                        // Send to Flutter via EventChannel (on background thread)
-                        sendAudioToFlutter(buffer.copyOf(read))
-                        
-                        // Log every 50 chunks to show activity
-                        if (chunksProcessed % 50 == 0) {
-                            Log.d(TAG, "Processed $chunksProcessed audio chunks")
+                        // Only send audio when NOT paused
+                        if (!isPaused) {
+                            chunksProcessed++
+                            // Send to Flutter via EventChannel (on background thread)
+                            sendAudioToFlutter(buffer.copyOf(read))
+
+                            // Log every 50 chunks to show activity
+                            if (chunksProcessed % 50 == 0) {
+                                Log.d(TAG, "Processed $chunksProcessed audio chunks")
+                            }
                         }
+                        // When paused, we still read from mic (to keep buffer clear) but don't send
                     }
                 }
                 
@@ -270,18 +292,27 @@ class AudioForegroundService : Service() {
     private fun handleAudioFocusChange(focusChange: Int) {
         when (focusChange) {
             AudioManager.AUDIOFOCUS_LOSS -> {
-                Log.d(TAG, "Audio focus lost")
-                // Another app took audio focus, stop recording
-                stopRecording()
+                Log.d(TAG, "Audio focus lost - pausing (NOT stopping) to allow resume")
+                // Don't stop recording - just pause. This keeps the foreground service alive
+                // so we can resume when we get focus back (critical for screen-off operation)
+                pauseRecording()
             }
             AudioManager.AUDIOFOCUS_GAIN -> {
                 Log.d(TAG, "Audio focus gained")
-                // We got focus back - if we were supposed to be recording, we are
+                // Resume recording if it was paused due to focus loss
+                if (isPaused) {
+                    Log.d(TAG, "Resuming recording after focus regained")
+                    resumeRecording()
+                }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                Log.d(TAG, "Audio focus lost temporarily")
-                // Temporary loss (e.g., notification sound)
-                // Keep recording but note it
+                Log.d(TAG, "Audio focus lost temporarily - pausing")
+                // Temporary loss (e.g., notification sound, playback) - just pause
+                pauseRecording()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d(TAG, "Audio focus lost transiently (can duck) - continuing")
+                // We can duck, so keep recording but at lower priority
             }
         }
     }
@@ -360,7 +391,33 @@ class AudioForegroundService : Service() {
         
         Log.d(TAG, "Recording stopped completely")
     }
-    
+
+    private fun pauseRecording() {
+        if (!isRecording || isPaused) {
+            Log.d(TAG, "Cannot pause - not recording or already paused")
+            return
+        }
+
+        Log.d(TAG, "Pausing recording (keeping foreground service alive)")
+        isPaused = true
+        updateNotification("Paused - AI speaking")
+    }
+
+    private fun resumeRecording() {
+        if (!isRecording) {
+            Log.d(TAG, "Cannot resume - not in recording session")
+            return
+        }
+        if (!isPaused) {
+            Log.d(TAG, "Already active - nothing to resume")
+            return
+        }
+
+        Log.d(TAG, "Resuming recording")
+        isPaused = false
+        updateNotification("Listening...")
+    }
+
     override fun onDestroy() {
         Log.d(TAG, "Service being destroyed")
         stopRecording()

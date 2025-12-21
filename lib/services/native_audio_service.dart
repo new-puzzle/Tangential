@@ -10,8 +10,10 @@ class NativeAudioService {
 
   StreamSubscription? _audioSubscription;
   bool _isStreaming = false;
+  bool _isPaused = false;
 
   bool get isStreaming => _isStreaming;
+  bool get isPaused => _isPaused;
 
   /// Start audio streaming via foreground service
   /// This will:
@@ -23,16 +25,21 @@ class NativeAudioService {
     required int sampleRate,
     required void Function(Uint8List) onData,
   }) async {
-    if (_isStreaming) {
-      debugPrint('NativeAudio: Already streaming, stopping first');
-      await stopStreaming();
-      // Add small delay for cleanup
-      await Future.delayed(const Duration(milliseconds: 200));
+    // If already streaming and paused, just resume
+    if (_isStreaming && _isPaused) {
+      debugPrint('NativeAudio: Already streaming but paused, resuming');
+      return await resumeStreaming();
+    }
+
+    // If already streaming and active, nothing to do
+    if (_isStreaming && !_isPaused) {
+      debugPrint('NativeAudio: Already streaming and active');
+      return true;
     }
 
     try {
       debugPrint('NativeAudio: Starting foreground service at $sampleRate Hz');
-      
+
       // Start listening to audio stream BEFORE starting service
       // This ensures we don't miss initial audio frames
       _audioSubscription = _eventChannel.receiveBroadcastStream().listen(
@@ -46,10 +53,12 @@ class NativeAudioService {
         onError: (error) {
           debugPrint('NativeAudio: Stream error: $error');
           _isStreaming = false;
+          _isPaused = false;
         },
         onDone: () {
           debugPrint('NativeAudio: Stream ended');
           _isStreaming = false;
+          _isPaused = false;
         },
       );
 
@@ -60,7 +69,8 @@ class NativeAudioService {
       );
 
       _isStreaming = result ?? false;
-      
+      _isPaused = false;
+
       if (_isStreaming) {
         debugPrint('NativeAudio: Foreground service started successfully');
       } else {
@@ -75,26 +85,28 @@ class NativeAudioService {
       await _audioSubscription?.cancel();
       _audioSubscription = null;
       _isStreaming = false;
+      _isPaused = false;
       return false;
     }
   }
 
-  /// Stop audio streaming and foreground service
+  /// Stop audio streaming and foreground service completely
+  /// Only call this when ending the conversation
   Future<void> stopStreaming() async {
     if (!_isStreaming && _audioSubscription == null) {
       debugPrint('NativeAudio: Nothing to stop');
       return;
     }
-    
-    debugPrint('NativeAudio: Stopping foreground service');
-    
+
+    debugPrint('NativeAudio: Stopping foreground service completely');
+
     try {
       // Stop the foreground service first
       await _methodChannel.invokeMethod('stopAudioStream');
     } catch (e) {
       debugPrint('NativeAudio: Error stopping service: $e');
     }
-    
+
     // Then cancel the stream subscription
     try {
       await _audioSubscription?.cancel();
@@ -103,7 +115,55 @@ class NativeAudioService {
     } finally {
       _audioSubscription = null;
       _isStreaming = false;
+      _isPaused = false;
       debugPrint('NativeAudio: Stopped completely');
+    }
+  }
+
+  /// Pause audio streaming (keeps foreground service alive)
+  /// Use this when AI is speaking to avoid SecurityException on resume
+  Future<bool> pauseStreaming() async {
+    if (!_isStreaming) {
+      debugPrint('NativeAudio: Cannot pause - not streaming');
+      return false;
+    }
+
+    if (_isPaused) {
+      debugPrint('NativeAudio: Already paused');
+      return true;
+    }
+
+    try {
+      debugPrint('NativeAudio: Pausing audio stream (service stays alive)');
+      await _methodChannel.invokeMethod('pauseAudioStream');
+      _isPaused = true;
+      return true;
+    } catch (e) {
+      debugPrint('NativeAudio: Error pausing: $e');
+      return false;
+    }
+  }
+
+  /// Resume audio streaming after pause
+  Future<bool> resumeStreaming() async {
+    if (!_isStreaming) {
+      debugPrint('NativeAudio: Cannot resume - not streaming');
+      return false;
+    }
+
+    if (!_isPaused) {
+      debugPrint('NativeAudio: Already active');
+      return true;
+    }
+
+    try {
+      debugPrint('NativeAudio: Resuming audio stream');
+      await _methodChannel.invokeMethod('resumeAudioStream');
+      _isPaused = false;
+      return true;
+    } catch (e) {
+      debugPrint('NativeAudio: Error resuming: $e');
+      return false;
     }
   }
 }
