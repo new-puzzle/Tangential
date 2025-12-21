@@ -1,6 +1,8 @@
 package com.example.tangential
 
 import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.util.Log
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -14,52 +16,62 @@ class MainActivity : FlutterFragmentActivity() {
     private val AUDIO_CHANNEL = "com.tangential/audio"
     private val AUDIO_EVENT_CHANNEL = "com.tangential/audio_stream"
 
-    private var audioCaptureService: AudioCaptureService? = null
-    private var audioEventSink: EventChannel.EventSink? = null
-
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
-        // Native audio streaming for foreground service
+        // EventChannel for audio streaming from foreground service
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, AUDIO_EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                    audioEventSink = events
+                    // Set the static event sink in AudioForegroundService
+                    AudioForegroundService.eventSink = events
+                    Log.d(TAG, "Audio EventChannel connected")
                 }
 
                 override fun onCancel(arguments: Any?) {
-                    audioEventSink = null
+                    AudioForegroundService.eventSink = null
+                    Log.d(TAG, "Audio EventChannel disconnected")
                 }
             })
 
+        // MethodChannel for controlling the foreground service
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AUDIO_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "startAudioStream" -> {
                         val sampleRate = call.argument<Int>("sampleRate") ?: 16000
+                        
                         try {
-                            if (audioCaptureService == null) {
-                                audioCaptureService = AudioCaptureService()
+                            // Start foreground service
+                            val intent = Intent(this, AudioForegroundService::class.java).apply {
+                                action = AudioForegroundService.ACTION_START_RECORDING
+                                putExtra(AudioForegroundService.EXTRA_SAMPLE_RATE, sampleRate)
                             }
-                            val started = audioCaptureService?.startRecording(sampleRate) { audioData ->
-                                // Ensure events are sent on the main thread.
-                                runOnUiThread {
-                                    audioEventSink?.success(audioData)
-                                }
-                            } ?: false
-                            result.success(started)
+                            
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(intent)
+                            } else {
+                                startService(intent)
+                            }
+                            
+                            Log.d(TAG, "Started AudioForegroundService at ${sampleRate}Hz")
+                            result.success(true)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to start native audio: ${e.message}")
+                            Log.e(TAG, "Failed to start foreground service: ${e.message}")
                             result.success(false)
                         }
                     }
                     "stopAudioStream" -> {
                         try {
-                            audioCaptureService?.stopRecording()
-                            audioCaptureService = null
+                            val intent = Intent(this, AudioForegroundService::class.java).apply {
+                                action = AudioForegroundService.ACTION_STOP_RECORDING
+                            }
+                            startService(intent)
+                            
+                            Log.d(TAG, "Stopped AudioForegroundService")
                             result.success(true)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to stop native audio: ${e.message}")
+                            Log.e(TAG, "Failed to stop foreground service: ${e.message}")
                             result.success(false)
                         }
                     }

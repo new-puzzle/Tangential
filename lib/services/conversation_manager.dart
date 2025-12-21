@@ -44,7 +44,6 @@ class ConversationManager {
   bool _isRunning = false;
   bool _isProcessing = false;
   bool _isSpeaking = false;
-  bool _useNativeAudioForRealtimeSession = false;
 
   // Voice Activity Detection (for standard modes only)
   Timer? _vadTimer;
@@ -327,13 +326,6 @@ class ConversationManager {
       return false;
     }
 
-    // Lock this for the duration of the session so changing the toggle mid-call
-    // doesn't unexpectedly switch audio capture implementations.
-    _useNativeAudioForRealtimeSession =
-        appState.useNativeAudio &&
-        !kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.android;
-
     bool connected = false;
     String errorDetail = '';
 
@@ -386,8 +378,8 @@ class ConversationManager {
       'STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate',
     );
 
+    // Send audio to the appropriate realtime service
     Future<void> onChunk(Uint8List audioData) async {
-      // Send audio to the appropriate realtime service
       if (isGemini) {
         _geminiLiveService.sendAudio(audioData);
       } else {
@@ -395,50 +387,25 @@ class ConversationManager {
       }
     }
 
-    bool success = false;
-
-    if (_useNativeAudioForRealtimeSession) {
-      success = await _nativeAudioService.startStreaming(
-        sampleRate: sampleRate,
-        onData: (audioData) {
-          onChunk(audioData);
-        },
-      );
-
-      // Fallback to existing audio path if native streaming fails.
-      if (!success) {
-        debugPrint(
-          'STREAM: Native audio failed, falling back to record package',
-        );
-        _useNativeAudioForRealtimeSession = false;
-      }
-    }
-
-    if (!success) {
-      success = await _recordingService.startStreaming(
-        sampleRate: sampleRate,
-        onData: (audioData) {
-          onChunk(audioData);
-        },
-      );
-    }
+    // Always use native audio foreground service for realtime modes
+    final success = await _nativeAudioService.startStreaming(
+      sampleRate: sampleRate,
+      onData: onChunk,
+    );
 
     if (!success) {
       debugPrint('STREAM ERROR: Failed to start audio streaming');
       onError?.call('Failed to start microphone streaming');
     } else {
       debugPrint(
-        'Audio streaming started (${sampleRate}Hz) - sending to ${isGemini ? "Gemini Live" : "OpenAI Realtime"}',
+        'Audio streaming started (${sampleRate}Hz) via foreground service - sending to ${isGemini ? "Gemini Live" : "OpenAI Realtime"}',
       );
     }
   }
 
   /// Stop audio streaming for realtime mode
   Future<void> _stopAudioStreaming() async {
-    if (_useNativeAudioForRealtimeSession) {
-      await _nativeAudioService.stopStreaming();
-    }
-    await _recordingService.stopStreaming();
+    await _nativeAudioService.stopStreaming();
   }
 
   /// Start listening with VAD (for standard modes only)
@@ -698,7 +665,6 @@ class ConversationManager {
     _isRunning = false;
     _isProcessing = false;
     _isSpeaking = false;
-    _useNativeAudioForRealtimeSession = false;
 
     _vadTimer?.cancel();
 
