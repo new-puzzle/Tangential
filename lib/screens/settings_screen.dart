@@ -284,14 +284,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Experimental native audio toggle (Android only)
-            SwitchListTile(
-              title: const Text('Use Native Audio (Experimental)'),
+            // Native audio info (always enabled now)
+            ListTile(
+              leading: const Icon(Icons.check_circle, color: Colors.green),
+              title: const Text('Native Audio Service'),
               subtitle: const Text(
-                'Enable hardware noise suppression for noisy environments. May improve outdoor performance.',
+                'Professional foreground service with bluetooth support and noise suppression. '
+                'Optimized for wireless headphones and pocket mode.',
               ),
-              value: appState.useNativeAudio,
-              onChanged: appState.setUseNativeAudio,
               contentPadding: EdgeInsets.zero,
             ),
             const Divider(),

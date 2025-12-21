@@ -210,6 +210,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               _buildAiProviderSection(appState),
 
               const SizedBox(height: 8),
+              
+              // Service Status Indicator
+              if (appState.isConversationActive)
+                _buildServiceStatusIndicator(),
 
               // File Attachment
               FileAttachmentWidget(
@@ -246,6 +250,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildServiceStatusIndicator() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Foreground Service Active',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Safe to lock screen • Bluetooth optimized',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.green.shade300,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
