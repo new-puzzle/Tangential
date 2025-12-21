@@ -14,6 +14,10 @@ class GeminiLiveService {
   bool _isConnected = false;
   bool _isListening = false;
   bool _setupComplete = false;
+  
+  // Health monitoring
+  DateTime? _lastMessageReceived;
+  DateTime? get lastMessageReceived => _lastMessageReceived;
 
   // Buffer for accumulating response text
   final StringBuffer _responseBuffer = StringBuffer();
@@ -185,6 +189,9 @@ class GeminiLiveService {
   }
 
   void _handleMessage(dynamic message, [Completer<bool>? setupCompleter]) {
+    // Update health monitoring timestamp
+    _lastMessageReceived = DateTime.now();
+    
     try {
       // Convert message to string - Gemini sends binary frames containing JSON
       String? messageStr;

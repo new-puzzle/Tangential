@@ -12,6 +12,10 @@ class OpenAiRealtimeService {
   String? _apiKey;
   bool _isConnected = false;
   bool _sessionConfigured = false;
+  
+  // Health monitoring
+  DateTime? _lastMessageReceived;
+  DateTime? get lastMessageReceived => _lastMessageReceived;
 
   // Buffer for accumulating response text
   final StringBuffer _responseBuffer = StringBuffer();
@@ -176,6 +180,9 @@ class OpenAiRealtimeService {
   }
 
   void _handleMessage(dynamic message, [Completer<bool>? setupCompleter]) {
+    // Update health monitoring timestamp
+    _lastMessageReceived = DateTime.now();
+    
     try {
       if (message is! String) return;
 

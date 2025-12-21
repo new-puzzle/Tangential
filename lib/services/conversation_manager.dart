@@ -44,6 +44,10 @@ class ConversationManager {
   bool _isRunning = false;
   bool _isProcessing = false;
   bool _isSpeaking = false;
+  
+  // Health monitoring
+  DateTime? _lastAudioReceived;
+  DateTime? get lastAudioReceived => _lastAudioReceived;
 
   // Voice Activity Detection (for standard modes only)
   Timer? _vadTimer;
@@ -387,6 +391,9 @@ class ConversationManager {
 
     // Send audio to the appropriate realtime service
     Future<void> onChunk(Uint8List audioData) async {
+      // Update heartbeat timestamp
+      _lastAudioReceived = DateTime.now();
+      
       if (isGemini) {
         _geminiLiveService.sendAudio(audioData);
       } else {
