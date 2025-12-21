@@ -127,10 +127,17 @@ class ConversationManager {
       _isSpeaking = false;
       if (_isRunning && _isRealtimeMode()) {
         _updateState(ConversationState.listening);
-        debugPrint('STATE: Now listening for user speech');
-        // CRITICAL: Restart mic streaming - it dies during playback due to audio focus loss
-        debugPrint('RESTART: Re-starting mic streaming after playback');
-        _startAudioStreaming();
+        
+        // CRITICAL: Wait for bluetooth to switch modes before restarting mic
+        // Bluetooth typically takes 200-400ms to switch from A2DP (music) to SCO (voice)
+        // 500ms ensures the switch is complete
+        debugPrint('RESTART: Waiting 500ms for bluetooth mode switch...');
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (_isRunning && _isRealtimeMode()) {
+            debugPrint('RESTART: Re-starting mic streaming after delay');
+            _startAudioStreaming();
+          }
+        });
       }
     };
 

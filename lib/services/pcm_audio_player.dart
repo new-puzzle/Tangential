@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Real-time PCM audio player for Gemini Live and OpenAI Realtime responses.
 /// Converts raw PCM Int16 audio to playable format.
+/// Manages audio focus for proper interaction with bluetooth headphones.
 class PcmAudioPlayer {
+  static const MethodChannel _audioFocusChannel = MethodChannel('com.tangential/audiofocus');
+  
   final AudioPlayer _player = AudioPlayer();
   final List<int> _audioBuffer = [];
   Timer? _playbackTimer;
@@ -46,6 +50,19 @@ class PcmAudioPlayer {
     if (_audioBuffer.isEmpty) return;
 
     _isPlaying = true;
+    
+    // Request audio focus before playback
+    bool focusGranted = false;
+    try {
+      final result = await _audioFocusChannel.invokeMethod<bool>('requestPlaybackFocus');
+      focusGranted = result ?? false;
+      if (!focusGranted) {
+        debugPrint('PCM: Audio focus not granted');
+      }
+    } catch (e) {
+      debugPrint('PCM: Failed to request audio focus: $e');
+    }
+    
     onPlaybackStarted?.call();
 
     try {
@@ -71,6 +88,16 @@ class PcmAudioPlayer {
       debugPrint('PCM playback error: $e');
     } finally {
       _isPlaying = false;
+      
+      // Release audio focus after playback
+      if (focusGranted) {
+        try {
+          await _audioFocusChannel.invokeMethod('releasePlaybackFocus');
+          debugPrint('PCM: Audio focus released');
+        } catch (e) {
+          debugPrint('PCM: Failed to release audio focus: $e');
+        }
+      }
 
       // Check if more audio arrived while playing
       if (_audioBuffer.isNotEmpty) {
