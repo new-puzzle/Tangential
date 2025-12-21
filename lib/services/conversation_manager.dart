@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'audio_handler.dart';
 import 'background_service.dart';
 import 'pcm_audio_player.dart';
+import 'native_audio_service.dart';
 import 'recording_service.dart';
 import 'tts_service.dart';
 import 'openai_tts_service.dart';
@@ -26,6 +26,7 @@ class ConversationManager {
 
   // Core services
   late RecordingService _recordingService;
+  late NativeAudioService _nativeAudioService;
   late TtsService _ttsService;
   late OpenaiTtsService _openaiTtsService;
   late WhisperService _whisperService;
@@ -43,6 +44,7 @@ class ConversationManager {
   bool _isRunning = false;
   bool _isProcessing = false;
   bool _isSpeaking = false;
+  bool _useNativeAudioForRealtimeSession = false;
 
   // Voice Activity Detection (for standard modes only)
   Timer? _vadTimer;
@@ -76,6 +78,7 @@ class ConversationManager {
 
   void _initializeServices() {
     _recordingService = RecordingService();
+    _nativeAudioService = NativeAudioService();
     _ttsService = TtsService();
     _openaiTtsService = OpenaiTtsService();
     _whisperService = WhisperService();
@@ -193,8 +196,12 @@ class ConversationManager {
 
       debugPrint('POCKET MODE: Keep-alive tick - checking mic stream');
 
-      // Check if recording service is still streaming
-      if (!_recordingService.isStreaming) {
+      final isStreaming = _useNativeAudioForRealtimeSession
+          ? _nativeAudioService.isStreaming
+          : _recordingService.isStreaming;
+
+      // Check if mic capture is still streaming
+      if (!isStreaming) {
         debugPrint('POCKET MODE: Mic stream died, restarting...');
         await _startAudioStreaming();
       }
@@ -430,6 +437,13 @@ class ConversationManager {
       return false;
     }
 
+    // Lock this for the duration of the session so changing the toggle mid-call
+    // doesn't unexpectedly switch audio capture implementations.
+    _useNativeAudioForRealtimeSession =
+        appState.useNativeAudio &&
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android;
+
     bool connected = false;
     String errorDetail = '';
 
@@ -482,17 +496,42 @@ class ConversationManager {
       'STREAM: Provider=${isGemini ? "Gemini" : "OpenAI"}, sampleRate=$sampleRate',
     );
 
-    final success = await _recordingService.startStreaming(
-      sampleRate: sampleRate,
-      onData: (audioData) {
-        // Send audio to the appropriate realtime service
-        if (isGemini) {
-          _geminiLiveService.sendAudio(audioData);
-        } else {
-          _openaiRealtimeService.sendAudio(audioData);
-        }
-      },
-    );
+    Future<void> onChunk(Uint8List audioData) async {
+      // Send audio to the appropriate realtime service
+      if (isGemini) {
+        _geminiLiveService.sendAudio(audioData);
+      } else {
+        _openaiRealtimeService.sendAudio(audioData);
+      }
+    }
+
+    bool success = false;
+
+    if (_useNativeAudioForRealtimeSession) {
+      success = await _nativeAudioService.startStreaming(
+        sampleRate: sampleRate,
+        onData: (audioData) {
+          onChunk(audioData);
+        },
+      );
+
+      // Fallback to existing audio path if native streaming fails.
+      if (!success) {
+        debugPrint(
+          'STREAM: Native audio failed, falling back to record package',
+        );
+        _useNativeAudioForRealtimeSession = false;
+      }
+    }
+
+    if (!success) {
+      success = await _recordingService.startStreaming(
+        sampleRate: sampleRate,
+        onData: (audioData) {
+          onChunk(audioData);
+        },
+      );
+    }
 
     if (!success) {
       debugPrint('STREAM ERROR: Failed to start audio streaming');
@@ -506,6 +545,9 @@ class ConversationManager {
 
   /// Stop audio streaming for realtime mode
   Future<void> _stopAudioStreaming() async {
+    if (_useNativeAudioForRealtimeSession) {
+      await _nativeAudioService.stopStreaming();
+    }
     await _recordingService.stopStreaming();
   }
 
@@ -767,6 +809,7 @@ class ConversationManager {
     _isProcessing = false;
     _isSpeaking = false;
     _screenIsOff = false;
+    _useNativeAudioForRealtimeSession = false;
 
     _vadTimer?.cancel();
     _stopScreenOffKeepAlive(); // Stop the pocket mode keep-alive

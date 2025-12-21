@@ -284,6 +284,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Experimental native audio toggle (Android only)
+            SwitchListTile(
+              title: const Text('Use Native Audio (Experimental)'),
+              subtitle: const Text(
+                'Enable hardware noise suppression for noisy environments. May improve outdoor performance.',
+              ),
+              value: appState.useNativeAudio,
+              onChanged: appState.setUseNativeAudio,
+              contentPadding: EdgeInsets.zero,
+            ),
+            const Divider(),
+            const SizedBox(height: 8),
             // Gemini Live Voice
             const Text(
               'Gemini Live Voice',
@@ -317,12 +329,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               dropdownColor: Theme.of(context).colorScheme.surface,
               isExpanded: true,
               items: const [
-                DropdownMenuItem(value: 'alloy', child: Text('Alloy (Neutral)')),
+                DropdownMenuItem(
+                  value: 'alloy',
+                  child: Text('Alloy (Neutral)'),
+                ),
                 DropdownMenuItem(value: 'echo', child: Text('Echo (Male)')),
-                DropdownMenuItem(value: 'fable', child: Text('Fable (British)')),
-                DropdownMenuItem(value: 'onyx', child: Text('Onyx (Deep Male)')),
+                DropdownMenuItem(
+                  value: 'fable',
+                  child: Text('Fable (British)'),
+                ),
+                DropdownMenuItem(
+                  value: 'onyx',
+                  child: Text('Onyx (Deep Male)'),
+                ),
                 DropdownMenuItem(value: 'nova', child: Text('Nova (Female)')),
-                DropdownMenuItem(value: 'shimmer', child: Text('Shimmer (Female)')),
+                DropdownMenuItem(
+                  value: 'shimmer',
+                  child: Text('Shimmer (Female)'),
+                ),
               ],
               onChanged: (value) {
                 if (value != null) appState.setOpenaiRealtimeVoice(value);
@@ -351,12 +375,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 dropdownColor: Theme.of(context).colorScheme.surface,
                 isExpanded: true,
                 items: const [
-                  DropdownMenuItem(value: 'nova', child: Text('Nova (Female, Warm)')),
-                  DropdownMenuItem(value: 'shimmer', child: Text('Shimmer (Female, Clear)')),
-                  DropdownMenuItem(value: 'alloy', child: Text('Alloy (Neutral)')),
+                  DropdownMenuItem(
+                    value: 'nova',
+                    child: Text('Nova (Female, Warm)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'shimmer',
+                    child: Text('Shimmer (Female, Clear)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'alloy',
+                    child: Text('Alloy (Neutral)'),
+                  ),
                   DropdownMenuItem(value: 'echo', child: Text('Echo (Male)')),
-                  DropdownMenuItem(value: 'fable', child: Text('Fable (British)')),
-                  DropdownMenuItem(value: 'onyx', child: Text('Onyx (Deep Male)')),
+                  DropdownMenuItem(
+                    value: 'fable',
+                    child: Text('Fable (British)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'onyx',
+                    child: Text('Onyx (Deep Male)'),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value != null) appState.setStandardModeVoice(value);

@@ -50,6 +50,7 @@ class AppState extends ChangeNotifier {
   bool _wakeWordEnabled = true;
   int _audioRetentionDays = 30;
   bool _textOnlyMode = false; // Skip TTS, show text only
+  bool _useNativeAudio = false; // Android-only experimental mic capture
 
   // Voice settings
   String _geminiLiveVoice = 'Kore';
@@ -72,6 +73,7 @@ class AppState extends ChangeNotifier {
   bool get wakeWordEnabled => _wakeWordEnabled;
   int get audioRetentionDays => _audioRetentionDays;
   bool get textOnlyMode => _textOnlyMode;
+  bool get useNativeAudio => _useNativeAudio;
   String get geminiLiveVoice => _geminiLiveVoice;
   String get openaiRealtimeVoice => _openaiRealtimeVoice;
   String get standardModeVoice => _standardModeVoice;
@@ -179,6 +181,11 @@ class AppState extends ChangeNotifier {
 
   void setTextOnlyMode(bool enabled) {
     _textOnlyMode = enabled;
+    notifyListeners();
+  }
+
+  void setUseNativeAudio(bool enabled) {
+    _useNativeAudio = enabled;
     notifyListeners();
   }
 
