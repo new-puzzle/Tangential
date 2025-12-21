@@ -1,0 +1,474 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\Users\workr> cd C:\Users\workr\Projects\tangential
+PS C:\Users\workr\Projects\tangential> flutter run
+Launching lib\main.dart on SM S938B in debug mode...
+Running Gradle task 'assembleDebug'...                             30.4s
+✓ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...          12.2s
+D/FlutterJNI( 7945): Beginning load of flutter...
+D/FlutterJNI( 7945): flutter (null) was loaded normally!
+I/flutter ( 7945): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+I/flutter ( 7945): BACKGROUND: Method call handler setup (no-op)
+Syncing files to device SM S938B...                                170ms
+
+Flutter run key commands.
+r Hot reload. 🔥🔥🔥
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on SM S938B is available at: http://127.0.0.1:51190/wDLHZsnOLpw=/
+The Flutter DevTools debugger and profiler on SM S938B is available at:
+http://127.0.0.1:51190/wDLHZsnOLpw=/devtools/?uri=ws://127.0.0.1:51190/wDLHZsnOLpw=/ws
+D/ProfileInstaller( 7945): Installing profile for com.example.tangential
+I/VRI[MainActivity]@182945e( 7945): call setFrameRateCategory for touch hint category=high hint, reason=touch, vri=VRI[MainActivity]@182945e
+I/flutter ( 7945): Gemini Flash service initialized
+I/flutter ( 7945): API Keys: Gemini=true, OpenAI=true, Deepseek=true, Mistral=true
+I/flutter ( 7945): BACKGROUND: Started (wakelock managed by wakelock_plus)
+I/flutter ( 7945): Starting conversation with Gemini Live (realtime: true)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+D/NotificationManager( 7945): BOOTING pkg =com.example.tangential mBlockedChannelsForOverflowNoti=[]
+I/flutter ( 7945): Attempting Gemini Live connection...
+I/flutter ( 7945): Gemini Live: Connecting to WebSocket...
+I/BLASTBufferQueue_Java( 7945): update, w= 1440 h= 3120 mName = VRI[MainActivity]@182945e mNativeObject= 0xb400007b0b7a3390 sc.mNativeObject= 0xb4000079bb76f850 format= -3 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3574 android.view.ViewRootImpl.relayoutWindow:11685 android.view.ViewRootImpl.performTraversals:4804 android.view.ViewRootImpl.doTraversal:3924 android.view.ViewRootImpl$TraversalRunnable.run:12903 android.view.Choreographer$CallbackRecord.run:1901
+I/VRI[MainActivity]@182945e( 7945): Relayout returned: old=(0,0,1440,3120) new=(0,0,1440,3120) relayoutAsync=true req=(1440,3120)0 dur=0 res=0x0 s={true 0xb4000079db7940b0} ch=false seqId=0
+I/VRI[MainActivity]@182945e( 7945): updateBoundsLayer: t=android.view.SurfaceControl$Transaction@ffb47dc sc=Surface(name=Bounds for - com.example.tangential/com.example.tangential.MainActivity@0)/@0xe0ad0e5 frame=9
+I/VRI[MainActivity]@182945e( 7945): registerCallbackForPendingTransactions
+I/VRI[MainActivity]@182945e( 7945): mWNT: t=0xb40000799b7a03d0 mBlastBufferQueue=0xb400007b0b7a3390 fn= 9 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$10.onFrameDraw:6536 android.view.ViewRootImpl$4.onFrameDraw:2489 android.view.ThreadedRenderer$1.onFrameDraw:718
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live: WebSocket connected, sending setup...
+I/flutter ( 7945): Gemini Live: Sending setup: {"setup":{"model":"models/gemini-2.5-flash-native-audio-preview-09-2025","generationConfig":{"responseModalities":["AUDIO"],"temperature":0.7,"topP":0.95,"maxOutputTokens":8192,"speechConfig":{"voiceConfig":{"prebuiltVoiceConfig":{"voiceName":"Kore"}}}},"systemInstruction":{"parts":[{"text":"You are Tangential, a warm and knowledgeable companion for walks.\n\nROLES:\n- Health & wellness coach\n- Scientific tutor (explain simply, use analogies)\n- Mental well-being supporter\n- Learning companion\n- Personal advisor\n\nSTYLE:\n- Short responses (2-3 sentences max)\n- Natural conversation (no lists, no bullet points, no \"here are 5 ways...\")\n- Socratic questioning (one question at a time, only if natural)\n- Audio-first: Speak as if on a phone call with a friend\n- Tangential: Connect current topics to what we discussed earlier\n\nWALKING CONTEXT:\n- I am walking outdoors, phone in pocket\n- I may be distracted by traffic, people, surroundings\n- Pause tolerance: If I'm silent, w
+I/flutter ( 7945): Gemini Live received keys: [setupComplete]
+I/flutter ( 7945): Gemini Live: Setup complete confirmed!
+I/flutter ( 7945): Gemini Live: Fully connected and ready
+I/flutter ( 7945): Connected to Gemini Live API - bidirectional audio active
+I/flutter ( 7945): STREAM: _startAudioStreaming called
+I/flutter ( 7945): STREAM: Provider=Gemini, sampleRate=16000
+I/flutter ( 7945): NativeAudio: Starting foreground service at 16000 Hz
+D/TangentialAudio( 7945): Audio EventChannel connected
+D/TangentialAudio( 7945): Started AudioForegroundService at 16000Hz
+I/flutter ( 7945): NativeAudio: Foreground service started successfully
+I/flutter ( 7945): Audio streaming started (16000Hz) via foreground service - sending to Gemini Live
+D/AudioForegroundService( 7945): Notification channel created
+D/AudioForegroundService( 7945): Service created
+D/AudioForegroundService( 7945): Started foreground service
+D/AudioForegroundService( 7945): Audio focus granted
+D/AudioForegroundService( 7945): No bluetooth headset, using phone mic/speaker
+D/AudioSystem( 7945): onNewServiceWithAdapter: media.audio_flinger service obtained 0xb400007b3b86b290
+D/AudioSystem( 7945): getService: checking for service media.audio_flinger: 0xb400007b4b807690
+D/AudioSystem( 7945): getClient: checking for service: 0xb400007b3b86b290
+D/AudioForegroundService( 7945): Noise suppressor enabled
+D/AudioForegroundService( 7945): Echo canceler enabled
+D/AudioForegroundService( 7945): Recording started successfully at 16000Hz
+I/NotificationManager( 7945): com.example.tangential: notify(1001, null, Notification(channel=tangential_audio shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=ONGOING_EVENT color=0x00000000 category=service vis=PRIVATE semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+D/NotificationManager( 7945): BOOTING pkg =com.example.tangential mBlockedChannelsForOverflowNoti=[]
+D/AudioForegroundService( 7945): Bluetooth SCO disconnected
+I/NotificationManager( 7945): com.example.tangential: notify(1001, null, Notification(channel=tangential_audio shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=ONGOING_EVENT color=0x00000000 category=service vis=PRIVATE semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/VRI[MainActivity]@182945e( 7945): handleResized, frames=ClientWindowFrames{frame=[0,0][1440,3120] display=[0,0][1440,3120] parentFrame=[0,0][0,0]} displayId=0 dragResizing=false compatScale=1.0 frameChanged=false attachedFrameChanged=false configChanged=false displayChanged=false compatScaleChanged=false dragResizingChanged=false
+I/VRI[MainActivity]@182945e( 7945): call setFrameRateCategory for touch hint category=no preference, reason=boost timeout, vri=VRI[MainActivity]@182945e
+I/InsetsSourceConsumer( 7945): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.tangential/com.example.tangential.MainActivity
+I/VRI[MainActivity]@182945e( 7945): handleResized, frames=ClientWindowFrames{frame=[0,0][1440,3120] display=[0,0][1440,3120] parentFrame=[0,0][0,0]} displayId=0 dragResizing=false compatScale=1.0 frameChanged=false attachedFrameChanged=false configChanged=false displayChanged=false compatScaleChanged=false dragResizingChanged=false
+I/ImeFocusController( 7945): onPreWindowFocus: skipped hasWindowFocus=false mHasImeFocus=true
+I/ImeFocusController( 7945): onPostWindowFocus: skipped hasWindowFocus=false mHasImeFocus=true
+I/VRI[MainActivity]@182945e( 7945): handleAppVisibility mAppVisible = true visible = false
+D/VRI[MainActivity]@182945e( 7945): visibilityChanged oldVisibility=true newVisibility=false
+I/VRI[MainActivity]@182945e( 7945): stopped(true) old = false
+D/VRI[MainActivity]@182945e( 7945): WindowStopped on com.example.tangential/com.example.tangential.MainActivity set to true
+D/HWUI    ( 7945): CacheManager::trimMemory(20)
+D/SurfaceView( 7945): 55013624 windowPositionLost, frameNr = 0
+I/SV[226282762 MainActivity]( 7945): aOrMT: VRI[MainActivity]@182945e t = android.view.SurfaceControl$Transaction@1a6d9d1 fN = 0 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionLost:2025 android.graphics.RenderNode$CompositePositionUpdateListener.positionLost:418
+I/VRI[MainActivity]@182945e( 7945): mWNT: t=0xb40000799b7a9890 mBlastBufferQueue=0xb400007b0b7a3390 fn= 0 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.SurfaceView.applyOrMergeTransaction:1863 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionLost:2025
+I/SV[226282762 MainActivity]( 7945): windowStopped(true) false io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a V.E...... ........ 0,0-1440,3120} of VRI[MainActivity]@182945e
+I/SurfaceView( 7945): 226282762 Changes: creating=false format=false size=false visible=true alpha=false hint=false left=false top=false z=false attached=true lifecycleStrategy=false
+I/SurfaceView( 7945): 226282762 Cur surface: Surface(name=null mNativeObject=-5476376623509325248)/@0x9c79e17
+D/SurfaceComposerClient( 7945): setCornerRadius ## d7ccd0a SurfaceView[com.example.tangential/com.example.tangential.MainActivity]@0#31396 cornerRadius=0.000000
+I/SurfaceView( 7945): 226282762 surfaceDestroyed
+I/SV[226282762 MainActivity]( 7945): surfaceDestroyed callback.size 1 #1 io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a V.E...... ........ 0,0-1440,3120}
+I/SV[226282762 MainActivity]( 7945): updateSurface: mVisible = false mSurface.isValid() = true
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+V/SurfaceView( 7945): Layout: x=0 y=0 w=1440 h=3120, frame=Rect(0, 0 - 1440, 3120)
+D/SV[226282762 MainActivity]( 7945): updateSurface: surface is not valid
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+I/SV[226282762 MainActivity]( 7945): onWindowVisibilityChanged(8) false io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a G.E...... ......I. 0,0-1440,3120} of VRI[MainActivity]@182945e
+D/SV[226282762 MainActivity]( 7945): updateSurface: surface is not valid
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+D/HWUI    ( 7945): CacheManager::trimMemory(20)
+I/VRI[MainActivity]@182945e( 7945): Relayout returned: old=(0,0,1440,3120) new=(0,0,1440,3120) relayoutAsync=false req=(1440,3120)8 dur=1 res=0x2 s={false 0x0} ch=false seqId=0
+D/SV[226282762 MainActivity]( 7945): updateSurface: surface is not valid
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+D/VRI[MainActivity]@182945e( 7945): applyTransactionOnDraw applyImmediately
+D/VRI[MainActivity]@182945e( 7945): Not drawing due to not visible. Reason=!mAppVisible && !mForceDecorViewVisibility
+D/VRI[MainActivity]@182945e( 7945): Pending transaction will not be applied in sync with a draw due to view not visible
+I/VRI[MainActivity]@182945e( 7945): mWNT: t=0xb40000799b7a8fd0 mBlastBufferQueue=0xnull fn= 0 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl.handleSyncRequestWhenNoAsyncDraw:6733 android.view.ViewRootImpl.performTraversals:5504 android.view.ViewRootImpl.doTraversal:3924
+I/VRI[MainActivity]@182945e( 7945): onDisplayChanged oldDisplayState=2 newDisplayState=1
+I/VRI[MainActivity]@182945e( 7945): onDisplayChanged oldDisplayState=1 newDisplayState=3
+D/SV[226282762 MainActivity]( 7945): updateSurface: surface is not valid
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+D/VRI[MainActivity]@182945e( 7945): applyTransactionOnDraw applyImmediately
+D/AudioForegroundService( 7945): Processed 50 audio chunks
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/VRI[MainActivity]@182945e( 7945): onDisplayChanged oldDisplayState=3 newDisplayState=4
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 46080 bytes (buffered: 46080)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 48000)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 49920)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 51840)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 53760)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 55680)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 57600)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 59520)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 61440)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 63360)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 65280)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 67200)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 69120)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 71040)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 72960)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 74880)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 76800)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 78720)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 80640)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 82560)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 84480)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 86400)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 88320)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 90240)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 92160)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 94080)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 96000)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 97920)
+D/TangentialAudio( 7945): Playback audio focus granted
+I/flutter ( 7945): PCM: Playback started - AI is speaking, pausing mic
+I/flutter ( 7945): NativeAudio: Pausing audio stream (service stays alive)
+I/AudioManager( 7945): dispatching onAudioFocusChange(-2) to android.media.AudioManager@16457e3com.example.tangential.AudioForegroundService$$ExternalSyntheticLambda2@712c5e0
+D/AudioForegroundService( 7945): Audio focus lost temporarily
+D/TangentialAudio( 7945): Paused AudioForegroundService
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 1920)
+D/AudioForegroundService( 7945): Pausing recording (keeping foreground service alive)
+I/NotificationManager( 7945): com.example.tangential: notify(1001, null, Notification(channel=tangential_audio shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=ONGOING_EVENT color=0x00000000 category=service vis=PRIVATE semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/ExoPlayerImpl( 7945): Init 58f996e [AndroidXMedia3/1.4.1] [pa3q, SM-S938B, samsung, 36]
+I/mple.tangential( 7945): hiddenapi: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/media3/exoplayer/audio/AudioTrackPositionTracker; (domain=app) using reflection: allowed
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 3840)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 5760)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 7680)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 9600)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 11520)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 13440)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 15360)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 17280)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 19200)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 21120)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 23040)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 24960)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/AudioManager( 7945): getParameters keys = offloadVariableRateSupported
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 26880)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+D/AudioTrack( 7945): setVolume(1.000000, 1.000000) pid : 7945
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 28800)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 30720)
+I/AudioManager( 7945): dispatching onAudioFocusChange(-1) to android.media.AudioManager@16457e3com.example.tangential.AudioForegroundService$$ExternalSyntheticLambda2@712c5e0
+D/AudioForegroundService( 7945): Audio focus lost
+D/AudioForegroundService( 7945): Stopping recording...
+D/AudioForegroundService( 7945): Recording thread finished, processed 92 chunks total
+D/AudioForegroundService( 7945): Audio focus released
+D/AudioForegroundService( 7945): Recording stopped completely
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 32640)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 34560)
+I/AudioManager( 7945): dispatching onAudioFocusChange(1) to android.media.AudioManager@d1cb58acom.ryanheise.audio_session.AndroidAudioManager$Singleton$$ExternalSyntheticLambda0@74587fb
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 36480)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+D/AudioTrack( 7945): setVolume(1.000000, 1.000000) pid : 7945
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 38400)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 40320)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 42240)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 44160)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 46080)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 48000)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 49920)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 51840)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 53760)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 55680)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 57600)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 59520)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 61440)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 63360)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 65280)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 67200)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 69120)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 71040)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 72960)
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/flutter ( 7945): Playing audio chunk: 1920 bytes (buffered: 74880)
+I/flutter ( 7945): Gemini Live received keys: [serverContent]
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+D/AudioTrack( 7945): getTimestamp_l(3055): device stall time corrected using current time 179613184436897
+W/AudioTrack( 7945): getTimestamp_l(3055): retrograde timestamp time corrected, 179613183764710 < 179613184436897
+D/AudioTrack( 7945): stop(3055): called with 37344 frames delivered
+I/flutter ( 7945): PCM playback completed (97920 bytes)
+D/TangentialAudio( 7945): Playback audio focus released
+I/flutter ( 7945): PCM: Audio focus released
+I/AudioManager( 7945): dispatching onAudioFocusChange(1) to android.media.AudioManager@d1cb58acom.ryanheise.audio_session.AndroidAudioManager$Singleton$$ExternalSyntheticLambda0@74587fb
+D/TangentialAudio( 7945): Playback audio focus granted
+I/flutter ( 7945): PCM: Playback started - AI is speaking, pausing mic
+I/flutter ( 7945): NativeAudio: Already paused
+I/AudioManager( 7945): dispatching onAudioFocusChange(-2) to android.media.AudioManager@d1cb58acom.ryanheise.audio_session.AndroidAudioManager$Singleton$$ExternalSyntheticLambda0@74587fb
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+D/AudioTrack( 7945): setVolume(1.000000, 1.000000) pid : 7945
+D/AudioTrack( 7945): getTimestamp_l(3056): device stall time corrected using current time 179614906205646
+D/AudioTrack( 7945): stop(3056): called with 37440 frames delivered
+I/flutter ( 7945): Gemini Live received keys: [serverContent, usageMetadata]
+I/flutter ( 7945): Gemini Live: Turn complete - audio done
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): PCM playback completed (74880 bytes)
+D/TangentialAudio( 7945): Playback audio focus released
+I/flutter ( 7945): PCM: Audio focus released
+I/flutter ( 7945): PCM: Playback complete - ready for next input
+I/flutter ( 7945): RESUME: Waiting 500ms for bluetooth mode switch...
+I/AudioManager( 7945): dispatching onAudioFocusChange(1) to android.media.AudioManager@d1cb58acom.ryanheise.audio_session.AndroidAudioManager$Singleton$$ExternalSyntheticLambda0@74587fb
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): RESUME: Resuming mic streaming after delay
+I/flutter ( 7945): NativeAudio: Resuming audio stream
+D/TangentialAudio( 7945): Resumed AudioForegroundService
+D/AudioForegroundService( 7945): Cannot resume - not in recording session
+I/VRI[MainActivity]@182945e( 7945): onDisplayChanged oldDisplayState=4 newDisplayState=3
+I/VRI[MainActivity]@182945e( 7945): onDisplayChanged oldDisplayState=3 newDisplayState=4
+I/VRI[MainActivity]@182945e( 7945): handleAppVisibility mAppVisible = false visible = true
+I/VRI[MainActivity]@182945e( 7945): stopped(false) old = true
+D/VRI[MainActivity]@182945e( 7945): WindowStopped on com.example.tangential/com.example.tangential.MainActivity set to false
+D/SV[226282762 MainActivity]( 7945): updateSurface: surface is not valid
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+D/VRI[MainActivity]@182945e( 7945): applyTransactionOnDraw applyImmediately
+I/SV[226282762 MainActivity]( 7945): onWindowVisibilityChanged(0) false io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a V.E...... ......ID 0,0-1440,3120} of VRI[MainActivity]@182945e
+D/SV[226282762 MainActivity]( 7945): updateSurface: surface is not valid
+I/SV[226282762 MainActivity]( 7945): releaseSurfaces: viewRoot = VRI[MainActivity]@182945e
+D/VRI[MainActivity]@182945e( 7945): applyTransactionOnDraw applyImmediately
+I/InsetsController( 7945): onStateChanged: host=com.example.tangential/com.example.tangential.MainActivity, from=android.view.ViewRootImpl.onInsetsStateChanged:3026, state=InsetsState: {mDisplayFrame=Rect(0, 0 - 1440, 3120), mDisplayCutout=DisplayCutout{insets=Rect(0, 113 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(685, 0 - 755, 113), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1440 displayHeight=3120 physicalDisplayWidth=1440 physicalDisplayHeight=3120 density={3.75} cutoutSpec={M 0,0 H -9.333333333333333 V 30.13333333333333 H 9.333333333333333 V 0 H 0 Z @dp} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}} sideOverrides={}}, mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=53, center=Point(53, 53)}, RoundedCorner{position=TopRight, radius=53, center=Point(1387, 53)}, RoundedCorner{position=BottomRight, radius=53, center=Point(1387, 3067)}, RoundedCorner{position=BottomLeft, radius=53, center=Point(53, 3067)}]}  mRoundedCornerFrame=Rect(0, 0 - 1440, 3120), mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(1286, 0 - 1440, 113) rotation=0}, mDisplayShape=DisplayShape{ spec=-311912193 displayWidth=1440 displayHeight=3120 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}, mSources= { InsetsSource: {d0fc0000 mType=statusBars mFrame=[0,0][1440,113] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {d0fc0005 mType=mandatorySystemGestures mFrame=[0,0][1440,155] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {d0fc0006 mType=tappableElement mFrame=[0,0][1440,113] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {3 mType=ime mFrame=[0,0][0,0] mVisible=false mFlags= mSideHint=NONE mBoundingRects=null}, InsetsSource: {27 mType=displayCutout mFrame=[0,0][1440,113] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {44990001 mType=navigationBars mFrame=[0,2952][1440,3120] mVisible=false mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {44990004 mType=systemGestures mFrame=[0,0][0,0] mVisible=true mFlags= mSideHint=NONE mBoundingRects=null}, InsetsSource: {44990005 mType=mandatorySystemGestures mFrame=[0,2952][1440,3120] mVisible=true mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {44990006 mType=tappableElement mFrame=[0,2952][1440,3120] mVisible=true mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {44990024 mType=systemGestures mFrame=[0,0][0,0] mVisible=true mFlags= mSideHint=NONE mBoundingRects=null} }
+I/BufferQueueProducer( 7945): [](id:1f0900000002,api:0,p:1887007778,c:7945) setDequeueTimeout:2077252342
+I/BLASTBufferQueue_Java( 7945): new BLASTBufferQueue, mName= VRI[MainActivity]@182945e mNativeObject= 0xb400007b0b7e87e0 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3585 android.view.ViewRootImpl.relayoutWindow:11685 android.view.ViewRootImpl.performTraversals:4804 android.view.ViewRootImpl.doTraversal:3924 android.view.ViewRootImpl$TraversalRunnable.run:12903 android.view.Choreographer$CallbackRecord.run:1901 android.view.Choreographer$CallbackRecord.run:1910 android.view.Choreographer.doCallbacks:1367 android.view.Choreographer.doFrame:1292 android.view.Choreographer$FrameDisplayEventReceiver.run:1870
+I/BLASTBufferQueue_Java( 7945): update, w= 1440 h= 3120 mName = VRI[MainActivity]@182945e mNativeObject= 0xb400007b0b7e87e0 sc.mNativeObject= 0xb4000079bb7a0ed0 format= -3 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3590 android.view.ViewRootImpl.relayoutWindow:11685 android.view.ViewRootImpl.performTraversals:4804 android.view.ViewRootImpl.doTraversal:3924 android.view.ViewRootImpl$TraversalRunnable.run:12903 android.view.Choreographer$CallbackRecord.run:1901
+I/VRI[MainActivity]@182945e( 7945): Relayout returned: old=(0,0,1440,3120) new=(0,0,1440,3120) relayoutAsync=false req=(1440,3120)0 dur=2 res=0x3 s={true 0xb4000079db7ef600} ch=true seqId=0
+D/VRI[MainActivity]@182945e( 7945): mThreadedRenderer.initialize() mSurface={isValid=true 0xb4000079db7ef600} hwInitialized=true
+I/SV[226282762 MainActivity]( 7945): windowStopped(false) true io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a V.E...... ......ID 0,0-1440,3120} of VRI[MainActivity]@182945e
+I/SurfaceView( 7945): 226282762 Changes: creating=true format=false size=false visible=true alpha=false hint=false left=false top=false z=false attached=true lifecycleStrategy=false
+I/BufferQueueProducer( 7945): [](id:1f0900000003,api:0,p:0,c:7945) setDequeueTimeout:2077252342
+I/BLASTBufferQueue_Java( 7945): new BLASTBufferQueue, mName= d7ccd0a SurfaceView[com.example.tangential/com.example.tangential.MainActivity]@0 mNativeObject= 0xb400007b0b868fe0 caller= android.view.SurfaceView.createBlastSurfaceControls:1781 android.view.SurfaceView.updateSurface:1450 android.view.SurfaceView.setWindowStopped:539 android.view.SurfaceView.surfaceCreated:2327 android.view.ViewRootImpl.notifySurfaceCreated:3502 android.view.ViewRootImpl.performTraversals:5286 android.view.ViewRootImpl.doTraversal:3924 android.view.ViewRootImpl$TraversalRunnable.run:12903 android.view.Choreographer$CallbackRecord.run:1901 android.view.Choreographer$CallbackRecord.run:1910
+I/BLASTBufferQueue_Java( 7945): update, w= 1440 h= 3120 mName = d7ccd0a SurfaceView[com.example.tangential/com.example.tangential.MainActivity]@0 mNativeObject= 0xb400007b0b868fe0 sc.mNativeObject= 0xb4000079bb794f90 format= 4 caller= android.view.SurfaceView.createBlastSurfaceControls:1782 android.view.SurfaceView.updateSurface:1450 android.view.SurfaceView.setWindowStopped:539 android.view.SurfaceView.surfaceCreated:2327 android.view.ViewRootImpl.notifySurfaceCreated:3502 android.view.ViewRootImpl.performTraversals:5286
+I/SurfaceView( 7945): 226282762 Cur surface: Surface(name=null mNativeObject=0)/@0x9c79e17
+D/SurfaceComposerClient( 7945): setCornerRadius ## d7ccd0a SurfaceView[com.example.tangential/com.example.tangential.MainActivity]@0#31423 cornerRadius=0.000000
+I/SV[226282762 MainActivity]( 7945): pST: sr = Rect(0, 0 - 1440, 3120) sw = 1440 sh = 3120
+D/SurfaceView( 7945): 226282762 performSurfaceTransaction RenderWorker position = [0, 0, 1440, 3120] surfaceSize = 1440x3120
+I/SV[226282762 MainActivity]( 7945): updateSurface: mVisible = true mSurface.isValid() = true
+I/SV[226282762 MainActivity]( 7945): updateSurface: mSurfaceCreated = false surfaceChanged = true visibleChanged = true
+I/SurfaceView( 7945): 226282762 visibleChanged -- surfaceCreated
+I/SV[226282762 MainActivity]( 7945): surfaceCreated 1 #1 io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a V.E...... ......ID 0,0-1440,3120}
+I/SurfaceView( 7945): 226282762 surfaceChanged -- format=4 w=1440 h=3120
+I/SV[226282762 MainActivity]( 7945): surfaceChanged (1440,3120) 1 #1 io.flutter.embedding.android.FlutterSurfaceView{d7ccd0a V.E...... ......ID 0,0-1440,3120}
+I/SurfaceView( 7945): 226282762 surfaceRedrawNeeded
+V/SurfaceView( 7945): Layout: x=0 y=0 w=1440 h=3120, frame=Rect(0, 0 - 1440, 3120)
+D/VRI[MainActivity]@182945e( 7945): reportNextDraw android.view.ViewRootImpl.performTraversals:5443 android.view.ViewRootImpl.doTraversal:3924 android.view.ViewRootImpl$TraversalRunnable.run:12903 android.view.Choreographer$CallbackRecord.run:1901 android.view.Choreographer$CallbackRecord.run:1910
+D/VRI[MainActivity]@182945e( 7945): Setup new sync=wmsSync-VRI[MainActivity]@182945e#4
+I/VRI[MainActivity]@182945e( 7945): Creating new active sync group VRI[MainActivity]@182945e#5
+D/VRI[MainActivity]@182945e( 7945): Start draw after previous draw not visible
+D/VRI[MainActivity]@182945e( 7945): registerCallbacksForSync syncBuffer=false
+D/SurfaceView( 7945): 226282762 updateSurfacePosition RenderWorker, frameNr = 1, position = [0, 0, 1440, 3120] surfaceSize = 1440x3120
+I/SV[226282762 MainActivity]( 7945): uSP: rtp = Rect(0, 0 - 1440, 3120) rtsw = 1440 rtsh = 3120
+I/SV[226282762 MainActivity]( 7945): onSSPAndSRT: pl = 0 pt = 0 sx = 1.0 sy = 1.0
+I/SV[226282762 MainActivity]( 7945): aOrMT: VRI[MainActivity]@182945e t = android.view.SurfaceControl$Transaction@20a8054 fN = 1 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionChanged:1932 android.graphics.RenderNode$CompositePositionUpdateListener.positionChanged:401
+I/VRI[MainActivity]@182945e( 7945): mWNT: t=0xb40000799b7c6310 mBlastBufferQueue=0xb400007b0b7e87e0 fn= 1 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.SurfaceView.applyOrMergeTransaction:1863 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionChanged:1932
+D/VRI[MainActivity]@182945e( 7945): Received frameDrawingCallback syncResult=0 frameNum=1.
+I/VRI[MainActivity]@182945e( 7945): mWNT: t=0xb40000799b814b90 mBlastBufferQueue=0xb400007b0b7e87e0 fn= 1 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$12.onFrameDraw:15441 android.view.ThreadedRenderer$1.onFrameDraw:718 <bottom of call stack>
+I/VRI[MainActivity]@182945e( 7945): Setting up sync and frameCommitCallback
+I/BLASTBufferQueue( 7945): [VRI[MainActivity]@182945e#2](f:0,a:0,s:0) onFrameAvailable the first frame is available
+I/SurfaceComposerClient( 7945): apply transaction with the first frame. layerId: 31421, bufferData(ID: 34123515166752, frameNumber: 1)
+I/VRI[MainActivity]@182945e( 7945): Received frameCommittedCallback lastAttemptedDrawFrameNum=1 didProduceBuffer=true
+I/VRI[MainActivity]@182945e( 7945): onDisplayChanged oldDisplayState=4 newDisplayState=2
+I/InsetsController( 7945): onStateChanged: host=com.example.tangential/com.example.tangential.MainActivity, from=android.view.ViewRootImpl.onInsetsStateChanged:3026, state=InsetsState: {mDisplayFrame=Rect(0, 0 - 1440, 3120), mDisplayCutout=DisplayCutout{insets=Rect(0, 113 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(685, 0 - 755, 113), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1440 displayHeight=3120 physicalDisplayWidth=1440 physicalDisplayHeight=3120 density={3.75} cutoutSpec={M 0,0 H -9.333333333333333 V 30.13333333333333 H 9.333333333333333 V 0 H 0 Z @dp} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}} sideOverrides={}}, mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=53, center=Point(53, 53)}, RoundedCorner{position=TopRight, radius=53, center=Point(1387, 53)}, RoundedCorner{position=BottomRight, radius=53, center=Point(1387, 3067)}, RoundedCorner{position=BottomLeft, radius=53, center=Point(53, 3067)}]}  mRoundedCornerFrame=Rect(0, 0 - 1440, 3120), mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(1286, 0 - 1440, 113) rotation=0}, mDisplayShape=DisplayShape{ spec=-311912193 displayWidth=1440 displayHeight=3120 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}, mSources= { InsetsSource: {d0fc0000 mType=statusBars mFrame=[0,0][1440,113] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {d0fc0005 mType=mandatorySystemGestures mFrame=[0,0][1440,155] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {d0fc0006 mType=tappableElement mFrame=[0,0][1440,113] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {3 mType=ime mFrame=[0,0][0,0] mVisible=false mFlags= mSideHint=NONE mBoundingRects=null}, InsetsSource: {27 mType=displayCutout mFrame=[0,0][1440,113] mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {44990001 mType=navigationBars mFrame=[0,2952][1440,3120] mVisible=true mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {44990004 mType=systemGestures mFrame=[0,0][0,0] mVisible=true mFlags= mSideHint=NONE mBoundingRects=null}, InsetsSource: {44990005 mType=mandatorySystemGestures mFrame=[0,2952][1440,3120] mVisible=true mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {44990006 mType=tappableElement mFrame=[0,2952][1440,3120] mVisible=true mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {44990024 mType=systemGestures mFrame=[0,0][0,0] mVisible=true mFlags= mSideHint=NONE mBoundingRects=null} }
+I/VRI[MainActivity]@182945e( 7945): handleResized, frames=ClientWindowFrames{frame=[0,0][1440,3120] display=[0,0][1440,3120] parentFrame=[0,0][0,0]} displayId=0 dragResizing=false compatScale=1.0 frameChanged=false attachedFrameChanged=false configChanged=false displayChanged=false compatScaleChanged=false dragResizingChanged=false
+I/VRI[MainActivity]@182945e( 7945): handleResized mSyncSeqId = 0
+D/VRI[MainActivity]@182945e( 7945): reportNextDraw android.view.ViewRootImpl.handleResized:2983 android.view.ViewRootImpl.-$$Nest$mhandleResized:0 android.view.ViewRootImpl$W.resized:14082 android.app.servertransaction.WindowStateResizeItem.execute:93 android.app.servertransaction.WindowStateTransactionItem.execute:62
+D/VRI[MainActivity]@182945e( 7945): Setup new sync=wmsSync-VRI[MainActivity]@182945e#6
+I/VRI[MainActivity]@182945e( 7945): Creating new active sync group VRI[MainActivity]@182945e#7
+D/VRI[MainActivity]@182945e( 7945): registerCallbacksForSync syncBuffer=false
+D/VRI[MainActivity]@182945e( 7945): Received frameDrawingCallback syncResult=0 frameNum=2.
+I/VRI[MainActivity]@182945e( 7945): Setting up sync and frameCommitCallback
+I/VRI[MainActivity]@182945e( 7945): Received frameCommittedCallback lastAttemptedDrawFrameNum=2 didProduceBuffer=true
+D/VRI[MainActivity]@182945e( 7945): reportDrawFinished seqId=0
+I/BLASTBufferQueue( 7945): [d7ccd0a SurfaceView[com.example.tangential/com.example.tangential.MainActivity]@0#3](f:0,a:0,s:0) onFrameAvailable the first frame is available
+I/SurfaceComposerClient( 7945): apply transaction with the first frame. layerId: 31424, bufferData(ID: 34123515166747, frameNumber: 1)
+D/VRI[MainActivity]@182945e( 7945): reportDrawFinished seqId=0
+I/SurfaceView( 7945): 226282762 finishedDrawing
+I/VRI[MainActivity]@182945e( 7945): handleResized, frames=ClientWindowFrames{frame=[0,0][1440,3120] display=[0,0][1440,3120] parentFrame=[0,0][0,0]} displayId=0 dragResizing=false compatScale=1.0 frameChanged=false attachedFrameChanged=false configChanged=false displayChanged=false compatScaleChanged=false dragResizingChanged=false
+I/InsetsSourceConsumer( 7945): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.tangential/com.example.tangential.MainActivity
+I/InsetsSourceConsumer( 7945): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.tangential/com.example.tangential.MainActivity
+D/VRI[MainActivity]@182945e( 7945): mThreadedRenderer.initializeIfNeeded()#2 mSurface={isValid=true 0xb4000079db7ef600}
+D/InputMethodManagerUtils( 7945): startInputInner - Id : 0
+I/InputMethodManager( 7945): startInputInner - IInputMethodManagerGlobalInvoker.startInputOrWindowGainedFocus
+D/InputTransport( 7945): Input channel constructed: 'ClientS', fd=207
+I/InputMethodManager( 7945): handleMessage: setImeVisibility visible=false
+D/InsetsController( 7945): hide(ime(), fromIme=false)
+I/ImeTracker( 7945): com.example.tangential:3d112958: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/VRI[MainActivity]@182945e( 7945): call setFrameRateCategory for touch hint category=high hint, reason=touch, vri=VRI[MainActivity]@182945e
+I/flutter ( 7945): NativeAudio: Stopping foreground service completely
+D/TangentialAudio( 7945): Stopped AudioForegroundService
+I/flutter ( 7945): NativeAudio: Stopped completely
+D/AudioForegroundService( 7945): Nothing to stop
+D/TangentialAudio( 7945): Audio EventChannel disconnected
+I/ExoPlayerImpl( 7945): Release 58f996e [AndroidXMedia3/1.4.1] [pa3q, SM-S938B, samsung, 36] [media3.common, media3.exoplayer, media3.decoder, media3.datasource, media3.extractor]
+W/LegacyMessageQueue( 7945): Handler (android.os.Handler) {cd08497} sending message to a Handler on a dead thread
+W/LegacyMessageQueue( 7945): java.lang.IllegalStateException: Handler (android.os.Handler) {cd08497} sending message to a Handler on a dead thread
+W/LegacyMessageQueue( 7945):    at android.os.MessageQueue.enqueueMessageLegacy(MessageQueue.java:1391)
+W/LegacyMessageQueue( 7945):    at android.os.MessageQueue.enqueueMessage(MessageQueue.java:1500)
+W/LegacyMessageQueue( 7945):    at android.os.Handler.enqueueMessage(Handler.java:790)
+W/LegacyMessageQueue( 7945):    at android.os.Handler.sendMessageAtTime(Handler.java:739)
+W/LegacyMessageQueue( 7945):    at android.os.Handler.sendMessageDelayed(Handler.java:709)
+W/LegacyMessageQueue( 7945):    at android.os.Handler.post(Handler.java:439)
+W/LegacyMessageQueue( 7945):    at androidx.media3.exoplayer.audio.DefaultAudioSink.lambda$releaseAudioTrackAsync$1(DefaultAudioSink.java:1915)
+W/LegacyMessageQueue( 7945):    at androidx.media3.exoplayer.audio.DefaultAudioSink$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+W/LegacyMessageQueue( 7945):    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+W/LegacyMessageQueue( 7945):    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+W/LegacyMessageQueue( 7945):    at java.lang.Thread.run(Thread.java:1119)
+I/flutter ( 7945): Gemini Live: Disconnecting...
+I/flutter ( 7945): Gemini Live: Disconnected callback fired
+I/flutter ( 7945): Gemini Live: Disconnected
+D/AudioForegroundService( 7945): Service being destroyed
+D/AudioForegroundService( 7945): Nothing to stop
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/flutter ( 7945): BACKGROUND: Stopped
+I/flutter ( 7945): Conversation stopped
+I/BLASTBufferQueue_Java( 7945): update, w= 1440 h= 3120 mName = VRI[MainActivity]@182945e mNativeObject= 0xb400007b0b7e87e0 sc.mNativeObject= 0xb4000079bb7a0ed0 format= -3 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3574 android.view.ViewRootImpl.relayoutWindow:11685 android.view.ViewRootImpl.performTraversals:4804 android.view.ViewRootImpl.doTraversal:3924 android.view.ViewRootImpl$TraversalRunnable.run:12903 android.view.Choreographer$CallbackRecord.run:1901
+I/VRI[MainActivity]@182945e( 7945): Relayout returned: old=(0,0,1440,3120) new=(0,0,1440,3120) relayoutAsync=true req=(1440,3120)0 dur=0 res=0x0 s={true 0xb4000079db7ef600} ch=false seqId=0
+I/VRI[MainActivity]@182945e( 7945): updateBoundsLayer: t=android.view.SurfaceControl$Transaction@ffb47dc sc=Surface(name=Bounds for - com.example.tangential/com.example.tangential.MainActivity@1)/@0xf8ed333 frame=4
+I/VRI[MainActivity]@182945e( 7945): registerCallbackForPendingTransactions
+I/VRI[MainActivity]@182945e( 7945): mWNT: t=0xb40000799b798b10 mBlastBufferQueue=0xb400007b0b7e87e0 fn= 4 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$10.onFrameDraw:6536 android.view.ViewRootImpl$4.onFrameDraw:2489 android.view.ThreadedRenderer$1.onFrameDraw:718
+I/NotificationManager( 7945): com.example.tangential: notify(1124, null, Notification(channel=com.ta... shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=0 color=0x00000000 category=transport actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0)) as user
+I/VRI[MainActivity]@182945e( 7945): call setFrameRateCategory for touch hint category=no preference, reason=boost timeout, vri=VRI[MainActivity]@182945e

@@ -51,6 +51,7 @@ class ConversationManager {
 
   // Voice Activity Detection (for standard modes only)
   Timer? _vadTimer;
+  Timer? _watchdogTimer; // Safety watchdog for stuck recordings
   bool _hasDetectedSpeech = false;
   int _silenceCount = 0;
   int _speechDuration = 0; // How long user has been speaking (in VAD ticks)
@@ -68,6 +69,7 @@ class ConversationManager {
   static const int _maxVadErrors = 3;
   static const int _maxRecordingTicks = 75; // ~15 seconds max recording
   static const int _minSpeechTicks = 3; // Need at least 0.6 seconds of speech
+  static const int _watchdogTimeoutSeconds = 60; // Safety timeout for stuck recordings
 
   // Callbacks
   Function(String)? onUserTranscript;
@@ -431,6 +433,7 @@ class ConversationManager {
   }
 
   /// Start listening with VAD (for standard modes only)
+  /// Uses NativeAudioService (foreground service) to prevent Android throttling
   void _startListening() {
     if (!_isRunning || _isProcessing || _isRealtimeMode()) return;
 
@@ -446,14 +449,16 @@ class ConversationManager {
     _peakAmplitude = 0.0;
     _recentAvgAmplitude = 0.0;
 
-    _recordingService.startRecording().then((path) {
-      if (path == null) {
-        onError?.call('Failed to start recording');
+    // Use NativeAudioService with buffered mode for standard modes
+    // This uses Android foreground service, which prevents throttling when screen is off
+    _nativeAudioService.startBufferedStreaming(sampleRate: 16000).then((success) {
+      if (!success) {
+        onError?.call('Failed to start audio recording');
         return;
       }
 
       debugPrint(
-        'Recording started - VAD active (max ${_maxRecordingTicks * 200}ms)',
+        'NativeAudio: Buffered streaming started - VAD active (max ${_maxRecordingTicks * 200}ms)',
       );
 
       _vadTimer?.cancel();
@@ -461,10 +466,45 @@ class ConversationManager {
         if (_vadCheckInProgress) return;
         _checkVoiceActivity();
       });
+
+      // Start watchdog timer to prevent stuck recordings
+      _startWatchdog();
     });
   }
 
+  /// Start watchdog timer - force-recovers from stuck states
+  void _startWatchdog() {
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer(Duration(seconds: _watchdogTimeoutSeconds), () {
+      if (!_isRunning) return;
+
+      debugPrint('WATCHDOG: Timeout triggered! Force recovering...');
+
+      // Force cancel VAD timer
+      _vadTimer?.cancel();
+
+      // Clear any stuck state
+      _vadCheckInProgress = false;
+      _isProcessing = false;
+
+      // Stop and restart audio
+      _nativeAudioService.stopStreaming().then((_) {
+        if (_isRunning && !_isRealtimeMode()) {
+          debugPrint('WATCHDOG: Restarting listening...');
+          _startListening();
+        }
+      });
+    });
+  }
+
+  /// Cancel watchdog timer
+  void _cancelWatchdog() {
+    _watchdogTimer?.cancel();
+    _watchdogTimer = null;
+  }
+
   /// Check voice activity based on amplitude (optimized for noisy environments)
+  /// Now uses NativeAudioService amplitude which is calculated from PCM chunks
   Future<void> _checkVoiceActivity() async {
     _vadCheckInProgress = true;
 
@@ -484,13 +524,14 @@ class ConversationManager {
         return;
       }
 
-      final amplitude = await _recordingService.getAmplitude();
+      // Get amplitude from NativeAudioService (synchronous, from latest PCM chunk)
+      final amplitude = _nativeAudioService.getAmplitude();
 
-      // Check for error signal (-1.0)
-      if (amplitude < 0) {
+      // Check if streaming stopped unexpectedly
+      if (!_nativeAudioService.isStreaming) {
         _vadErrorCount++;
         if (_vadErrorCount >= _maxVadErrors) {
-          debugPrint('VAD: Too many errors, processing anyway...');
+          debugPrint('VAD: Audio streaming stopped unexpectedly, processing...');
           _vadTimer?.cancel();
           if (_hasDetectedSpeech) {
             await _processRecording();
@@ -572,16 +613,27 @@ class ConversationManager {
   }
 
   /// Process recording (standard mode only)
+  /// Uses NativeAudioService buffered mode - pauses streaming, saves buffer to WAV, transcribes
   Future<void> _processRecording() async {
     if (!_isRunning || _isProcessing) return;
 
     _isProcessing = true;
     _updateState(ConversationState.processing);
 
+    // Cancel watchdog while processing (we're no longer listening)
+    _cancelWatchdog();
+
     try {
-      final audioPath = await _recordingService.stopRecording();
+      // Pause streaming (keeps foreground service alive for next turn)
+      await _nativeAudioService.pauseStreaming();
+
+      // Save buffered audio to WAV file
+      final audioPath = await _nativeAudioService.saveBufferToFile();
       if (audioPath == null) {
+        debugPrint('No audio captured in buffer');
         _isProcessing = false;
+        // Resume streaming for next turn
+        await _nativeAudioService.resumeStreaming();
         if (_isRunning) _startListening();
         return;
       }
@@ -589,11 +641,12 @@ class ConversationManager {
       if (appState.openaiApiKey == null || appState.openaiApiKey!.isEmpty) {
         onError?.call('OpenAI API key required for speech recognition');
         _isProcessing = false;
+        await _nativeAudioService.resumeStreaming();
         if (_isRunning) _startListening();
         return;
       }
 
-      debugPrint('Sending audio to Whisper for transcription...');
+      debugPrint('Sending ${_nativeAudioService.bufferedDurationMs}ms audio to Whisper...');
       final transcript = await _whisperService.transcribe(audioPath);
       if (transcript == null || transcript.trim().isEmpty) {
         debugPrint(
@@ -601,6 +654,7 @@ class ConversationManager {
         );
         // Don't show error for empty speech, just restart listening
         _isProcessing = false;
+        await _nativeAudioService.resumeStreaming();
         if (_isRunning) _startListening();
         return;
       }
@@ -619,6 +673,7 @@ class ConversationManager {
       debugPrint('Error: $e');
       onError?.call('Error: $e');
       _isProcessing = false;
+      await _nativeAudioService.resumeStreaming();
       if (_isRunning) _startListening();
     }
   }
@@ -681,6 +736,7 @@ class ConversationManager {
   }
 
   /// Stop the conversation - idempotent
+  /// Forces all audio/AI to stop and cleans up resources
   Future<void> stopConversation() async {
     if (!_isRunning) return; // Already stopped
 
@@ -688,11 +744,15 @@ class ConversationManager {
     _isProcessing = false;
     _isSpeaking = false;
 
+    // Cancel all timers
     _vadTimer?.cancel();
+    _cancelWatchdog();
 
-    // Stop both streaming and recording
+    // Clear audio buffer
+    _nativeAudioService.clearBuffer();
+
+    // Stop audio streaming (both realtime and standard modes use this now)
     await _stopAudioStreaming();
-    await _recordingService.stopRecording();
     await _ttsService.stop();
     await _openaiTtsService.stop();
     await _pcmAudioPlayer.stop();
@@ -728,9 +788,11 @@ class ConversationManager {
       }
       onUserTranscript?.call(message);
     } else {
-      // Standard mode
+      // Standard mode - stop VAD and audio capture
       _vadTimer?.cancel();
-      await _recordingService.stopRecording();
+      // Clear buffer and pause (don't stop - keeps foreground service for next turn)
+      _nativeAudioService.clearBuffer();
+      await _nativeAudioService.pauseStreaming();
 
       if (_isSpeaking) {
         _ttsService.stop();
@@ -750,7 +812,9 @@ class ConversationManager {
   Future<void> pause() async {
     if (!_isRunning) return;
     _vadTimer?.cancel();
-    await _recordingService.stopRecording();
+    // Pause audio capture (keeps foreground service alive)
+    _nativeAudioService.clearBuffer();
+    await _nativeAudioService.pauseStreaming();
     await _ttsService.stop();
     await _openaiTtsService.stop();
     _updateState(ConversationState.sleeping);
