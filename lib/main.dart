@@ -45,12 +45,12 @@ class TangentialApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    // Calming, warm color palette suitable for walks
-    const primaryColor = Color(0xFF6B4EAD); // Soft purple
-    const secondaryColor = Color(0xFF4ECDC4); // Teal
-    const backgroundColor = Color(0xFF1A1A2E); // Deep navy
-    const surfaceColor = Color(0xFF16213E); // Slightly lighter navy
-    const accentColor = Color(0xFFFF6B6B); // Coral for accents
+    // Natural, earthy color palette matching the forest railway icon
+    const primaryColor = Color(0xFF4A7856); // Forest green
+    const secondaryColor = Color(0xFF8B7355); // Warm brown/tan
+    const backgroundColor = Color(0xFF1E2822); // Deep forest green-black
+    const surfaceColor = Color(0xFF2A3A2E); // Lighter forest
+    const accentColor = Color(0xFFB8956A); // Golden autumn leaf
 
     return ThemeData(
       useMaterial3: true,

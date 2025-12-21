@@ -127,16 +127,19 @@ class AudioForegroundService : Service() {
         
         Log.d(TAG, "Audio focus granted")
         
-        // Check if bluetooth is available and start SCO
-        if (audioManager.isBluetoothScoAvailableOffCall) {
-            Log.d(TAG, "Bluetooth SCO available, starting...")
+        // Check if bluetooth headset is ACTUALLY connected
+        val isBluetoothConnected = audioManager.isBluetoothScoAvailableOffCall && 
+                                   (audioManager.isBluetoothA2dpOn || audioManager.isBluetoothScoOn)
+        
+        if (isBluetoothConnected) {
+            Log.d(TAG, "Bluetooth headset connected, starting SCO...")
             updateNotification("Connecting bluetooth...")
             audioManager.startBluetoothSco()
             audioManager.isBluetoothScoOn = true
             // Recording will start when SCO connects (see scoStateReceiver)
         } else {
-            // No bluetooth, start recording immediately
-            Log.d(TAG, "No bluetooth, starting recording directly")
+            // No bluetooth headset, start recording immediately with phone mic
+            Log.d(TAG, "No bluetooth headset, using phone mic/speaker")
             startActualRecording(sampleRate)
         }
     }

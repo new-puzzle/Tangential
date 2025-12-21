@@ -374,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         case ConversationState.sleeping:
           statusText = 'Sleeping - Tap to wake';
           icon = Icons.bedtime;
-          color = Colors.purple;
+          color = const Color(0xFF8B7355); // Warm brown
           break;
         case ConversationState.idle:
           statusText = 'Start Conversation';
