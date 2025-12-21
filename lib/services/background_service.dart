@@ -1,90 +1,32 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
-/// Manages native Android background operation:
-/// - Partial Wake Lock (keeps CPU running when screen is off)
-/// - Screen on/off detection
+/// Simplified background service - wakelock management now handled by wakelock_plus package only
+/// Screen state monitoring removed - foreground service handles this natively
 class BackgroundService {
-  static const MethodChannel _channel = MethodChannel('com.tangential/background');
   static bool _isRunning = false;
-  static Timer? _keepAliveTimer;
   
-  // Callbacks for screen state changes
-  static VoidCallback? onScreenOff;
-  static VoidCallback? onScreenOn;
-  
-  /// Start background operation (acquire wake lock)
+  /// Start background operation
+  /// Now just tracks state - actual wakelock managed by wakelock_plus in conversation_manager
   static Future<bool> start() async {
     if (_isRunning) return true;
     
-    try {
-      final result = await _channel.invokeMethod<bool>('startBackground');
-      if (result == true) {
-        _isRunning = true;
-        _startKeepAlive();
-        debugPrint('BACKGROUND: Started - wake lock acquired');
-        return true;
-      } else {
-        debugPrint('BACKGROUND: Failed to start');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('BACKGROUND: Error starting - $e');
-      // Fallback: continue without native wake lock
-      _isRunning = true;
-      return true;
-    }
+    _isRunning = true;
+    debugPrint('BACKGROUND: Started (wakelock managed by wakelock_plus)');
+    return true;
   }
   
-  /// Stop background operation (release wake lock)
+  /// Stop background operation
   static Future<void> stop() async {
     if (!_isRunning) return;
     
-    try {
-      _stopKeepAlive();
-      await _channel.invokeMethod('stopBackground');
-      _isRunning = false;
-      debugPrint('BACKGROUND: Stopped - wake lock released');
-    } catch (e) {
-      debugPrint('BACKGROUND: Error stopping - $e');
-      _isRunning = false;
-    }
+    _isRunning = false;
+    debugPrint('BACKGROUND: Stopped');
   }
   
-  /// Setup handler for messages from native code
+  /// Setup method call handler (kept for compatibility, does nothing)
   static void setupMethodCallHandler() {
-    _channel.setMethodCallHandler((call) async {
-      switch (call.method) {
-        case 'onScreenOff':
-          debugPrint('BACKGROUND: Screen OFF detected');
-          onScreenOff?.call();
-          break;
-        case 'onScreenOn':
-          debugPrint('BACKGROUND: Screen ON detected');
-          onScreenOn?.call();
-          break;
-      }
-    });
-  }
-  
-  /// Keep-alive timer to prevent service from being killed
-  static void _startKeepAlive() {
-    _keepAliveTimer?.cancel();
-    _keepAliveTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      if (_isRunning) {
-        debugPrint('BACKGROUND: Keep-alive ping');
-      } else {
-        timer.cancel();
-      }
-    });
-  }
-  
-  static void _stopKeepAlive() {
-    _keepAliveTimer?.cancel();
-    _keepAliveTimer = null;
+    debugPrint('BACKGROUND: Method call handler setup (no-op)');
   }
   
   static bool get isRunning => _isRunning;
 }
-
