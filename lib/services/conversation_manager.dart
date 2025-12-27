@@ -63,7 +63,7 @@ class ConversationManager {
 
   // VAD tuning - optimized for walking/noisy environments
   static const int _silenceThreshold =
-      2; // ~0.4 seconds of silence - faster response
+      12; // ~2.4 seconds of silence - allow natural pauses
   static const double _speechStartThreshold =
       0.08; // Very low - detect any speech
   static const int _maxVadErrors = 3;
